@@ -4,7 +4,7 @@ USER root
 
 RUN apt-get update && apt-get install -y curl bash && rm -rf /var/lib/apt/lists/*
 
-COPY boot.sh /opt/boot.sh
+COPY docker/boot.sh /opt/boot.sh
 RUN chmod +x /opt/boot.sh
 
 ENTRYPOINT ["/opt/boot.sh"]
