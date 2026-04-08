@@ -32,4 +32,4 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: airebels/comfyui:latest
+          tags: airebels/comfyui:stable
