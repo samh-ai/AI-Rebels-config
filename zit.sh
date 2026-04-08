@@ -87,7 +87,7 @@ LOG_FILE="/workspace/zit-background.log"
   echo "-------------------------------------------------------"
   echo "DOWNLOAD COMPLETE - Z-IMAGE-TURBO INSTALLED"
   echo "-------------------------------------------------------"
-) >> "$LOG_FILE" 2>&1 &
+) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
 echo "zit.sh: background watcher started, main boot can continue"
 echo "zit.sh: tail -f $LOG_FILE"
