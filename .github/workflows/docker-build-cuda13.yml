@@ -1,8 +1,12 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image (CUDA 13)
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'docker/Dockerfile.cuda13'
+      - 'docker/boot.sh'
+      - '.github/workflows/docker-build-cuda13.yml'
   workflow_dispatch:
 
 jobs:
