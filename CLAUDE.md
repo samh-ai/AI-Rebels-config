@@ -35,7 +35,24 @@ LOG_FILE="/workspace/<name>-background.log"
     sleep 2
   done
 
-  # 3. Do all work here (clone nodes, pip install, download models, etc.)
+  # 3. Clone custom node(s) + pip install requirements
+
+  # 4. Download models via hf download
+
+  # 5. If custom nodes were installed, restart ComfyUI:
+  pkill -f "python main.py" || true
+  sleep 3
+  cd /workspace/runpod-slim/ComfyUI && python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+
+  # 6. Wait for ComfyUI to come back online
+  for i in $(seq 1 300); do
+    if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then break; fi
+    sleep 2
+  done
+
+  echo "-------------------------------------------------------"
+  echo "DOWNLOAD COMPLETE - <NAME> INSTALLED"
+  echo "-------------------------------------------------------"
 
 ) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
@@ -53,4 +70,5 @@ exit 0
 - **Custom nodes go in** `$COMFY_ROOT/custom_nodes/<node-name>/`
 - **Tool-specific models go in their own subfolder** e.g. `$COMFY_ROOT/models/SEEDVR2/` — not the generic `models/` root
 - **Use `hf download` for HuggingFace files** with `HF_HUB_ENABLE_HF_TRANSFER=1` for speed
-- **Note in the final echo** if a ComfyUI restart is needed (e.g. after custom node install)
+- **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
+- **ComfyUI is a raw process** (`python main.py --listen 0.0.0.0 --port 8188`) — there is no supervisor, so it must be relaunched manually
