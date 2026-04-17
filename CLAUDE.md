@@ -71,4 +71,5 @@ exit 0
 - **Tool-specific models go in their own subfolder** e.g. `$COMFY_ROOT/models/SEEDVR2/` — not the generic `models/` root
 - **Use `hf download` for HuggingFace files** with `HF_HUB_ENABLE_HF_TRANSFER=1` for speed
 - **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
+- **Never hardcode URLs or git repos in .sh files** — add them to `registry.sh` and reference by key. Source it at the top of the subshell: `source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")`
 - **ComfyUI is a raw process** — there is no supervisor, so it must be relaunched manually with `.venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188` from `/workspace/runpod-slim/ComfyUI`. Do NOT use `python` — it is not on PATH, only the venv python is available

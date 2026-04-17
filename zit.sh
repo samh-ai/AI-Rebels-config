@@ -11,6 +11,8 @@ LOG_FILE="/workspace/zit-background.log"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
 
+  source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
+
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
@@ -70,17 +72,11 @@ LOG_FILE="/workspace/zit-background.log"
     pip install -U "huggingface_hub[hf_transfer]"
   fi
 
-  download_hf_file \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" \
-    "$MODELS_DIR/text_encoders"
+  download_hf_file "${HF_MODELS[qwen_3_4b.safetensors]}" "$MODELS_DIR/text_encoders"
 
-  download_hf_file \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" \
-    "$MODELS_DIR/vae"
+  download_hf_file "${HF_MODELS[ae.safetensors]}" "$MODELS_DIR/vae"
 
-  download_hf_file \
-    "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" \
-    "$MODELS_DIR/diffusion_models"
+  download_hf_file "${HF_MODELS[z_image_turbo_bf16.safetensors]}" "$MODELS_DIR/diffusion_models"
 
   rm -rf "$TMP_DIR"
 

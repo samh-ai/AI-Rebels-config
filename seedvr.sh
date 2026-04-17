@@ -10,7 +10,26 @@ LOG_FILE="/workspace/seedvr-background.log"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   SEEDVR_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-SeedVR2_VideoUpscaler"
   SEEDVR_MODELS_DIR="$COMFY_ROOT/models/SEEDVR2"
+  TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
+
+  source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
+
+  download_hf_file() {
+    local url="$1"
+    local dest_dir="$2"
+    local repo_path
+    local filename
+
+    repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
+    filename="$(basename "$url")"
+
+    mkdir -p "$dest_dir"
+
+    echo "Downloading: $url"
+    hf download "numz/SeedVR2_comfyUI" "$repo_path" --local-dir "$TMP_DIR"
+    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
+  }
 
   echo "-------------------------------------------------------"
   echo "BACKGROUND WATCHER STARTED: SEEDVR2 CONFIG"
@@ -51,7 +70,7 @@ LOG_FILE="/workspace/seedvr-background.log"
   # Install custom node
   if [ ! -d "$SEEDVR_NODE_DIR" ]; then
     echo "Cloning ComfyUI-SeedVR2_VideoUpscaler..."
-    git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler "$SEEDVR_NODE_DIR"
+    git clone "${CUSTOM_NODES[seedvr2]}" "$SEEDVR_NODE_DIR"
   else
     echo "Custom node already present, skipping clone."
   fi
@@ -62,15 +81,14 @@ LOG_FILE="/workspace/seedvr-background.log"
   fi
 
   # Download models
-  mkdir -p "$SEEDVR_MODELS_DIR"
+  rm -rf "$TMP_DIR"
+  mkdir -p "$TMP_DIR"
 
-  echo "Downloading seedvr2_ema_7b_fp16.safetensors..."
-  hf download "numz/SeedVR2_comfyUI" "seedvr2_ema_7b_fp16.safetensors" \
-    --local-dir "$SEEDVR_MODELS_DIR"
+  download_hf_file "${HF_MODELS[seedvr2_ema_7b_fp16.safetensors]}" "$SEEDVR_MODELS_DIR"
 
-  echo "Downloading ema_vae_fp16.safetensors..."
-  hf download "numz/SeedVR2_comfyUI" "ema_vae_fp16.safetensors" \
-    --local-dir "$SEEDVR_MODELS_DIR"
+  download_hf_file "${HF_MODELS[ema_vae_fp16.safetensors]}" "$SEEDVR_MODELS_DIR"
+
+  rm -rf "$TMP_DIR"
 
   echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
