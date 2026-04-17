@@ -75,7 +75,7 @@ LOG_FILE="/workspace/seedvr-background.log"
   echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do

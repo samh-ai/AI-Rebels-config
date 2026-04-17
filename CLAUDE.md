@@ -42,7 +42,7 @@ LOG_FILE="/workspace/<name>-background.log"
   # 5. If custom nodes were installed, restart ComfyUI:
   pkill -f "python main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   # 6. Wait for ComfyUI to come back online
   for i in $(seq 1 300); do
@@ -71,4 +71,4 @@ exit 0
 - **Tool-specific models go in their own subfolder** e.g. `$COMFY_ROOT/models/SEEDVR2/` — not the generic `models/` root
 - **Use `hf download` for HuggingFace files** with `HF_HUB_ENABLE_HF_TRANSFER=1` for speed
 - **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
-- **ComfyUI is a raw process** (`python main.py --listen 0.0.0.0 --port 8188`) — there is no supervisor, so it must be relaunched manually
+- **ComfyUI is a raw process** — there is no supervisor, so it must be relaunched manually with `.venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188` from `/workspace/runpod-slim/ComfyUI`. Do NOT use `python` — it is not on PATH, only the venv python is available
