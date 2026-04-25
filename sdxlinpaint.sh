@@ -10,18 +10,26 @@ LOG_FILE="/workspace/sdxlinpaint-background.log"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   LANPAINT_NODE_DIR="$CUSTOM_NODES_DIR/LanPaint"
   CHECKPOINTS_DIR="$COMFY_ROOT/models/checkpoints"
+  TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
 
   source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
 
+  export HF_HUB_ENABLE_HF_TRANSFER=1
+  export HF_XET_HIGH_PERFORMANCE=1
+  export HF_HUB_DOWNLOAD_TIMEOUT=60
+
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
-    local filename
+    local repo repo_path filename
+    repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
+    repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
     filename="$(basename "$url")"
     mkdir -p "$dest_dir"
     echo "Downloading: $url"
-    curl -fL -H "Authorization: Bearer $HF_TOKEN" -o "$dest_dir/$filename" "$url"
+    hf download "$repo" "$repo_path" --local-dir "$TMP_DIR"
+    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
   }
 
   echo "-------------------------------------------------------"
@@ -52,6 +60,10 @@ LOG_FILE="/workspace/sdxlinpaint-background.log"
 
   echo "ComfyUI is live. Installing custom node and downloading models..."
 
+  if ! command -v hf >/dev/null 2>&1; then
+    pip install -U "huggingface_hub[hf_transfer]"
+  fi
+
   # Install custom node
   if [ ! -d "$LANPAINT_NODE_DIR" ]; then
     echo "Cloning LanPaint..."
@@ -66,7 +78,12 @@ LOG_FILE="/workspace/sdxlinpaint-background.log"
   fi
 
   # Download model
+  rm -rf "$TMP_DIR"
+  mkdir -p "$TMP_DIR"
+
   download_hf_file "${HF_MODELS[big_lust_v1.6.safetensors]}" "$CHECKPOINTS_DIR"
+
+  rm -rf "$TMP_DIR"
 
   echo "Download complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
