@@ -5,7 +5,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:seedvr2.net)",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "WebFetch(domain:registry.comfy.org)"
+      "WebFetch(domain:registry.comfy.org)",
+      "WebFetch(domain:civitai.com)",
+      "WebFetch(domain:developer.civitai.com)"
     ]
   }
 }

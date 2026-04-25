@@ -1,15 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-LOG_FILE="/workspace/seedvr-background.log"
+LOG_FILE="/workspace/sdxlinpaint-background.log"
 
 (
   set -euo pipefail
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
-  SEEDVR_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-SeedVR2_VideoUpscaler"
-  SEEDVR_MODELS_DIR="$COMFY_ROOT/models/SEEDVR2"
+  LANPAINT_NODE_DIR="$CUSTOM_NODES_DIR/LanPaint"
+  CHECKPOINTS_DIR="$COMFY_ROOT/models/checkpoints"
   HEALTH_URL="http://127.0.0.1:8188"
 
   source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
@@ -25,7 +25,7 @@ LOG_FILE="/workspace/seedvr-background.log"
   }
 
   echo "-------------------------------------------------------"
-  echo "BACKGROUND WATCHER STARTED: SEEDVR2 CONFIG"
+  echo "BACKGROUND WATCHER STARTED: SDXL INPAINT CONFIG"
   echo "-------------------------------------------------------"
 
   echo "Waiting for ComfyUI root to exist..."
@@ -53,24 +53,22 @@ LOG_FILE="/workspace/seedvr-background.log"
   echo "ComfyUI is live. Installing custom node and downloading models..."
 
   # Install custom node
-  if [ ! -d "$SEEDVR_NODE_DIR" ]; then
-    echo "Cloning ComfyUI-SeedVR2_VideoUpscaler..."
-    git clone "${CUSTOM_NODES[seedvr2]}" "$SEEDVR_NODE_DIR"
+  if [ ! -d "$LANPAINT_NODE_DIR" ]; then
+    echo "Cloning LanPaint..."
+    git clone "${CUSTOM_NODES[lanpaint]}" "$LANPAINT_NODE_DIR"
   else
     echo "Custom node already present, skipping clone."
   fi
 
-  if [ -f "$SEEDVR_NODE_DIR/requirements.txt" ]; then
+  if [ -f "$LANPAINT_NODE_DIR/requirements.txt" ]; then
     echo "Installing requirements..."
-    pip install -q -r "$SEEDVR_NODE_DIR/requirements.txt"
+    pip install -q -r "$LANPAINT_NODE_DIR/requirements.txt"
   fi
 
-  # Download models
-  download_hf_file "${HF_MODELS[seedvr2_ema_7b_fp16.safetensors]}" "$SEEDVR_MODELS_DIR"
+  # Download model
+  download_hf_file "${HF_MODELS[big_lust_v1.6.safetensors]}" "$CHECKPOINTS_DIR"
 
-  download_hf_file "${HF_MODELS[ema_vae_fp16.safetensors]}" "$SEEDVR_MODELS_DIR"
-
-  echo "Downloads complete. Restarting ComfyUI to load node..."
+  echo "Download complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
   sleep 3
   cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
@@ -87,11 +85,11 @@ LOG_FILE="/workspace/seedvr-background.log"
   fi
 
   echo "-------------------------------------------------------"
-  echo "DOWNLOAD COMPLETE - SEEDVR2 INSTALLED"
+  echo "DOWNLOAD COMPLETE - SDXL INPAINT INSTALLED"
   echo "-------------------------------------------------------"
 
 ) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
-echo "seedvr.sh: background watcher started, main boot can continue"
-echo "seedvr.sh: tail -f $LOG_FILE"
+echo "sdxlinpaint.sh: background watcher started, main boot can continue"
+echo "sdxlinpaint.sh: tail -f $LOG_FILE"
 exit 0
