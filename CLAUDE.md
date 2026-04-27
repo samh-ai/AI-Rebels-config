@@ -20,35 +20,99 @@ LOG_FILE="/workspace/<name>-background.log"
   set -euo pipefail
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
-  # Define destination dirs here, NOT at the top level
+  CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
+  <NODE>_NODE_DIR="$CUSTOM_NODES_DIR/<node-folder-name>"
+  # Define all destination model dirs here, NOT at the top level
+  TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
 
-  # 1. Wait for ComfyUI root directory to exist (volume may not be mounted yet)
+  source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
+
+  export HF_HUB_ENABLE_HF_TRANSFER=1
+  export HF_XET_HIGH_PERFORMANCE=1
+  export HF_HUB_DOWNLOAD_TIMEOUT=60
+
+  download_hf_file() {
+    local url="$1"
+    local dest_dir="$2"
+    local repo repo_path filename
+    repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
+    repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
+    filename="$(basename "$url")"
+    mkdir -p "$dest_dir"
+    echo "Downloading: $url"
+    hf download "$repo" "$repo_path" --local-dir "$TMP_DIR"
+    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
+  }
+
+  echo "-------------------------------------------------------"
+  echo "BACKGROUND WATCHER STARTED: <NAME> CONFIG"
+  echo "-------------------------------------------------------"
+
+  echo "Waiting for ComfyUI root to exist..."
   for i in $(seq 1 300); do
     if [ -d "$COMFY_ROOT" ]; then break; fi
     sleep 2
   done
 
-  # 2. Wait for ComfyUI server on 8188 (safety check — ensures all folders exist)
+  if [ ! -d "$COMFY_ROOT" ]; then
+    echo "Timed out waiting for ComfyUI root: $COMFY_ROOT"
+    exit 1
+  fi
+
+  echo "Waiting for ComfyUI server on 8188..."
   for i in $(seq 1 600); do
     if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then break; fi
     sleep 2
   done
 
-  # 3. Clone custom node(s) + pip install requirements
+  if ! curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+    echo "Timed out waiting for ComfyUI server: $HEALTH_URL"
+    exit 1
+  fi
 
-  # 4. Download models via hf download
+  echo "ComfyUI is live. Installing custom node and downloading models..."
 
-  # 5. If custom nodes were installed, restart ComfyUI:
+  if ! command -v hf >/dev/null 2>&1; then
+    pip install -U "huggingface_hub[hf_transfer]"
+  fi
+
+  # Install custom node
+  if [ ! -d "$<NODE>_NODE_DIR" ]; then
+    echo "Cloning <node-name>..."
+    git clone "${CUSTOM_NODES[<key>]}" "$<NODE>_NODE_DIR"
+  else
+    echo "Custom node already present, skipping clone."
+  fi
+
+  if [ -f "$<NODE>_NODE_DIR/requirements.txt" ]; then
+    echo "Installing requirements..."
+    pip install -q -r "$<NODE>_NODE_DIR/requirements.txt"
+  fi
+
+  # Download models
+  rm -rf "$TMP_DIR"
+  mkdir -p "$TMP_DIR"
+
+  download_hf_file "${HF_MODELS[<filename>]}" "$<DEST_DIR>"
+
+  rm -rf "$TMP_DIR"
+
+  echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
   sleep 3
   cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
-  # 6. Wait for ComfyUI to come back online
+  echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do
     if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then break; fi
     sleep 2
   done
+
+  if ! curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+    echo "Timed out waiting for ComfyUI to restart."
+    exit 1
+  fi
 
   echo "-------------------------------------------------------"
   echo "DOWNLOAD COMPLETE - <NAME> INSTALLED"
@@ -64,12 +128,22 @@ exit 0
 ### Rules
 
 - **Everything goes inside the subshell** — no synchronous work before the `( ... ) &`
-- **Always wait for COMFY_ROOT** first — the `/workspace` volume may not be mounted instantly
-- **Always wait for 8188** — safety check that ComfyUI is fully installed and folders exist
+- **Always wait for COMFY_ROOT** first, with a timeout check after the loop — the `/workspace` volume may not be mounted instantly
+- **Always wait for 8188** — safety check that ComfyUI is fully installed and folders exist; also check with timeout after the loop
 - **Variables are defined inside the subshell** — not at the top of the script
-- **Custom nodes go in** `$COMFY_ROOT/custom_nodes/<node-name>/`
-- **Tool-specific models go in their own subfolder** e.g. `$COMFY_ROOT/models/SEEDVR2/` — not the generic `models/` root
-- **Use `hf download` for HuggingFace files** with `HF_HUB_ENABLE_HF_TRANSFER=1` for speed
+- **Always source registry.sh** at the top of the subshell: `source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")`
+- **Always set HF env vars** inside the subshell: `HF_HUB_ENABLE_HF_TRANSFER=1`, `HF_XET_HIGH_PERFORMANCE=1`, `HF_HUB_DOWNLOAD_TIMEOUT=60`
+- **Always include the `download_hf_file()` helper** — copy it verbatim from an existing script; do not inline raw `hf download` calls
+- **Always check `hf` is installed** before downloading: `if ! command -v hf >/dev/null 2>&1; then pip install -U "huggingface_hub[hf_transfer]"; fi`
+- **Custom nodes go in** `$COMFY_ROOT/custom_nodes/<node-name>/`; skip clone if already present
+- **Model destination dirs** — use standard ComfyUI layout:
+  - Diffusion models: `$COMFY_ROOT/models/diffusion_models/`
+  - Checkpoints: `$COMFY_ROOT/models/checkpoints/`
+  - LoRAs: `$COMFY_ROOT/models/loras/`
+  - Text encoders: `$COMFY_ROOT/models/text_encoders/`
+  - VAE: `$COMFY_ROOT/models/vae/`
+  - Tool-specific models: `$COMFY_ROOT/models/<TOOLNAME>/`
+- **Use `TMP_DIR="/workspace/hf-downloads"`** — clean it before and after all downloads
+- **Never hardcode URLs or git repos in .sh files** — add them to `registry.sh` and reference by key
 - **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
-- **Never hardcode URLs or git repos in .sh files** — add them to `registry.sh` and reference by key. Source it at the top of the subshell: `source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")`
 - **ComfyUI is a raw process** — there is no supervisor, so it must be relaunched manually with `.venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188` from `/workspace/runpod-slim/ComfyUI`. Do NOT use `python` — it is not on PATH, only the venv python is available
