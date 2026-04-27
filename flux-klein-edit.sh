@@ -84,8 +84,7 @@ LOG_FILE="/workspace/flux-klein-edit-background.log"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  download_hf_file "${HF_MODELS[flux-2-klein-9b-kv-fp8.safetensors]}" "$DIFFUSION_MODELS_DIR"
-  download_hf_file "${HF_MODELS[flux-2-klein-base-9b-fp8.safetensors]}" "$DIFFUSION_MODELS_DIR"
+  download_hf_file "${HF_MODELS[flux-2-klein-9b-fp8.safetensors]}" "$DIFFUSION_MODELS_DIR"
 
   download_hf_file "${HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[Klein-consistency.safetensors]}" "$LORAS_DIR"
