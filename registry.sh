@@ -21,6 +21,7 @@ HF_MODELS[flux-2-klein-9b-fp8.safetensors]="https://huggingface.co/black-forest-
 # LoRAs
 HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]="https://huggingface.co/dx8152/Flux2-Klein-9B-Consistency/resolve/main/Flux2-Klein-9B-consistency-V2.safetensors"
 HF_MODELS[Klein-consistency.safetensors]="https://huggingface.co/dx8152/Flux2-Klein-9B-Consistency/resolve/main/Klein-consistency.safetensors"
+HF_MODELS[bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors]="https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap/resolve/main/bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors"
 
 # Text Encoders
 HF_MODELS[qwen_3_4b.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"

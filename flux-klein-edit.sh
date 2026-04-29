@@ -88,6 +88,7 @@ LOG_FILE="/workspace/flux-klein-edit-background.log"
 
   download_hf_file "${HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[Klein-consistency.safetensors]}" "$LORAS_DIR"
+  download_hf_file "${HF_MODELS[bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors]}" "$LORAS_DIR"
 
   download_hf_file "${HF_MODELS[qwen_3_8b_fp8mixed.safetensors]}" "$TEXT_ENCODERS_DIR"
 
