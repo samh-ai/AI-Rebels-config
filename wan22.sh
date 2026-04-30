@@ -88,6 +88,7 @@ LOG_FILE="/workspace/wan22-background.log"
   download_hf_file "${HF_MODELS[wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR"
   download_hf_file "${HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR"
 
+  download_hf_file "${HF_MODELS[Wan22_I2V_VBVR_HIGH_rank_64_fp16.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
 
