@@ -7,7 +7,8 @@
       "mcp__Claude_in_Chrome__tabs_context_mcp",
       "WebFetch(domain:registry.comfy.org)",
       "WebFetch(domain:civitai.com)",
-      "WebFetch(domain:developer.civitai.com)"
+      "WebFetch(domain:developer.civitai.com)",
+      "WebFetch(domain:docs.runpod.io)"
     ]
   }
 }
