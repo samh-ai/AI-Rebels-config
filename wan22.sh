@@ -114,11 +114,15 @@ LOG_FILE="/workspace/wan22-background.log"
 
   rm -rf "$TMP_DIR"
 
-  # Install SageAttention into ComfyUI venv
+  # Install SageAttention into ComfyUI venv (2.x not on PyPI, must build from source)
   echo "Installing triton and sageattention into ComfyUI venv..."
-  "$VENV_PIP" install -q --upgrade pip
   "$VENV_PIP" install -q triton
-  "$VENV_PIP" install -q sageattention==2.2.0 --no-build-isolation
+  SAGE_DIR="/tmp/SageAttention"
+  rm -rf "$SAGE_DIR"
+  git clone --depth=1 https://github.com/thu-ml/SageAttention.git "$SAGE_DIR"
+  export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
+  "$VENV_PIP" install "$SAGE_DIR" --no-build-isolation
+  rm -rf "$SAGE_DIR"
 
   echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true

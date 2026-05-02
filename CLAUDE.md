@@ -151,3 +151,4 @@ exit 0
 - **Never hardcode URLs or git repos in .sh files** — add them to `registry.sh` and reference by key
 - **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
 - **ComfyUI is a raw process** — there is no supervisor, so it must be relaunched manually with `.venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188` from `/workspace/runpod-slim/ComfyUI`. Do NOT use `python` — it is not on PATH, only the venv python is available
+- **SageAttention 2.x is NOT on PyPI** — `pip install sageattention==2.2.0` will fail. Must build from source: clone `https://github.com/thu-ml/SageAttention.git`, then `pip install <dir> --no-build-isolation` using the venv pip. Set `EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32` before building to speed up CUDA kernel compilation
