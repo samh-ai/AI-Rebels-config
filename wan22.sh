@@ -7,7 +7,6 @@ LOG_FILE="/workspace/wan22-background.log"
   set -euo pipefail
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
-  VENV_PIP="$COMFY_ROOT/.venv-cu128/bin/pip"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   VIDEOHELPER_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-VideoHelperSuite"
   RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
@@ -114,14 +113,14 @@ LOG_FILE="/workspace/wan22-background.log"
 
   rm -rf "$TMP_DIR"
 
-  # Install SageAttention into ComfyUI venv (2.x not on PyPI, must build from source)
-  echo "Installing triton and sageattention into ComfyUI venv..."
-  "$VENV_PIP" install -q triton
+  # Install SageAttention (2.x not on PyPI, must build from source)
+  echo "Installing triton and sageattention..."
+  pip install -q triton
   SAGE_DIR="/tmp/SageAttention"
   rm -rf "$SAGE_DIR"
   git clone --depth=1 https://github.com/thu-ml/SageAttention.git "$SAGE_DIR"
   export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
-  "$VENV_PIP" install "$SAGE_DIR" --no-build-isolation
+  pip install "$SAGE_DIR" --no-build-isolation
   rm -rf "$SAGE_DIR"
 
   echo "Downloads complete. Restarting ComfyUI to load node..."
