@@ -7,8 +7,10 @@ LOG_FILE="/workspace/wan22-background.log"
   set -euo pipefail
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
+  VENV_PIP="$COMFY_ROOT/.venv-cu128/bin/pip"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   VIDEOHELPER_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-VideoHelperSuite"
+  RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   DIFFUSION_MODELS_DIR="$COMFY_ROOT/models/diffusion_models"
   LORAS_DIR="$COMFY_ROOT/models/loras"
   TEXT_ENCODERS_DIR="$COMFY_ROOT/models/text_encoders"
@@ -81,6 +83,19 @@ LOG_FILE="/workspace/wan22-background.log"
     pip install -q -r "$VIDEOHELPER_NODE_DIR/requirements.txt"
   fi
 
+  # Install rgthree-comfy
+  if [ ! -d "$RGTHREE_NODE_DIR" ]; then
+    echo "Cloning rgthree-comfy..."
+    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  else
+    echo "rgthree-comfy already present, skipping clone."
+  fi
+
+  if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
+    echo "Installing rgthree requirements..."
+    pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
+  fi
+
   # Download models
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
@@ -91,6 +106,8 @@ LOG_FILE="/workspace/wan22-background.log"
   download_hf_file "${HF_MODELS[Wan22_I2V_VBVR_HIGH_rank_64_fp16.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
   download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
+  download_hf_file "${HF_MODELS[wan2.2_i2v_high_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR"
+  download_hf_file "${HF_MODELS[wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR"
 
   download_hf_file "${HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]}" "$TEXT_ENCODERS_DIR"
 
@@ -100,10 +117,15 @@ LOG_FILE="/workspace/wan22-background.log"
 
   rm -rf "$TMP_DIR"
 
+  # Install SageAttention into ComfyUI venv
+  echo "Installing triton and sageattention into ComfyUI venv..."
+  "$VENV_PIP" install -q triton
+  "$VENV_PIP" install -q sageattention==2.2.0 --no-build-isolation
+
   echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 --use-sage-attention >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do

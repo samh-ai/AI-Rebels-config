@@ -8,7 +8,10 @@
       "WebFetch(domain:registry.comfy.org)",
       "WebFetch(domain:civitai.com)",
       "WebFetch(domain:developer.civitai.com)",
-      "WebFetch(domain:docs.runpod.io)"
+      "WebFetch(domain:docs.runpod.io)",
+      "WebFetch(domain:lilys.ai)",
+      "WebFetch(domain:www.apatero.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }
