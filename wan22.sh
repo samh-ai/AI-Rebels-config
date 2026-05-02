@@ -113,12 +113,11 @@ LOG_FILE="/workspace/wan22-background.log"
 
   download_hf_file "${HF_MODELS[wan_2.1_vae.safetensors]}" "$VAE_DIR"
 
-  download_hf_file "${HF_MODELS[clip_vision_h.safetensors]}" "$CLIP_VISION_DIR"
-
   rm -rf "$TMP_DIR"
 
   # Install SageAttention into ComfyUI venv
   echo "Installing triton and sageattention into ComfyUI venv..."
+  "$VENV_PIP" install -q --upgrade pip
   "$VENV_PIP" install -q triton
   "$VENV_PIP" install -q sageattention==2.2.0 --no-build-isolation
 
