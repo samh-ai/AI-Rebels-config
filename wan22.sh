@@ -28,14 +28,15 @@ LOG_FILE="/workspace/wan22-background.log"
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
-    local repo repo_path filename
+    local repo repo_path filename dl_tmp
     repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
     repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
     filename="$(basename "$url")"
-    mkdir -p "$dest_dir"
+    dl_tmp="$TMP_DIR/$filename"
+    mkdir -p "$dest_dir" "$dl_tmp"
     echo "Downloading: $url"
-    hf download "$repo" "$repo_path" --local-dir "$TMP_DIR"
-    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
+    hf download "$repo" "$repo_path" --local-dir "$dl_tmp"
+    mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
   }
 
   echo "-------------------------------------------------------"
@@ -96,22 +97,20 @@ LOG_FILE="/workspace/wan22-background.log"
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
   fi
 
-  # Download models
+  # Download models (parallel)
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  download_hf_file "${HF_MODELS[wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR"
-  download_hf_file "${HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR"
-
-  download_hf_file "${HF_MODELS[Wan22_I2V_VBVR_HIGH_rank_64_fp16.safetensors]}" "$LORAS_DIR"
-  download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
-  download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR"
-  download_hf_file "${HF_MODELS[wan2.2_i2v_high_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR"
-  download_hf_file "${HF_MODELS[wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR"
-
-  download_hf_file "${HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]}" "$TEXT_ENCODERS_DIR"
-
-  download_hf_file "${HF_MODELS[wan_2.1_vae.safetensors]}" "$VAE_DIR"
+  download_hf_file "${HF_MODELS[wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR" &
+  download_hf_file "${HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]}" "$DIFFUSION_MODELS_DIR" &
+  download_hf_file "${HF_MODELS[Wan22_I2V_VBVR_HIGH_rank_64_fp16.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_high_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[wan2.2_i2v_A14b_low_noise_lora_rank64_lightx2v_4step_1022.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[wan2.2_i2v_high_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]}" "$TEXT_ENCODERS_DIR" &
+  download_hf_file "${HF_MODELS[wan_2.1_vae.safetensors]}" "$VAE_DIR" &
+  wait
 
   rm -rf "$TMP_DIR"
 

@@ -25,14 +25,15 @@ LOG_FILE="/workspace/flux-klein-edit-background.log"
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
-    local repo repo_path filename
+    local repo repo_path filename dl_tmp
     repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
     repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
     filename="$(basename "$url")"
-    mkdir -p "$dest_dir"
+    dl_tmp="$TMP_DIR/$filename"
+    mkdir -p "$dest_dir" "$dl_tmp"
     echo "Downloading: $url"
-    hf download "$repo" "$repo_path" --local-dir "$TMP_DIR"
-    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
+    hf download "$repo" "$repo_path" --local-dir "$dl_tmp"
+    mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
   }
 
   echo "-------------------------------------------------------"
@@ -80,19 +81,16 @@ LOG_FILE="/workspace/flux-klein-edit-background.log"
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
   fi
 
-  # Download models
+  # Download models (parallel)
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  download_hf_file "${HF_MODELS[flux-2-klein-9b-fp8.safetensors]}" "$DIFFUSION_MODELS_DIR"
-
-  download_hf_file "${HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]}" "$LORAS_DIR"
-  
-  download_hf_file "${HF_MODELS[bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors]}" "$LORAS_DIR"
-
-  download_hf_file "${HF_MODELS[qwen_3_8b_fp8mixed.safetensors]}" "$TEXT_ENCODERS_DIR"
-
-  download_hf_file "${HF_MODELS[flux2-vae.safetensors]}" "$VAE_DIR"
+  download_hf_file "${HF_MODELS[flux-2-klein-9b-fp8.safetensors]}" "$DIFFUSION_MODELS_DIR" &
+  download_hf_file "${HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors]}" "$LORAS_DIR" &
+  download_hf_file "${HF_MODELS[qwen_3_8b_fp8mixed.safetensors]}" "$TEXT_ENCODERS_DIR" &
+  download_hf_file "${HF_MODELS[flux2-vae.safetensors]}" "$VAE_DIR" &
+  wait
 
   rm -rf "$TMP_DIR"
 

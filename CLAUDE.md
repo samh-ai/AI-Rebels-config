@@ -35,14 +35,15 @@ LOG_FILE="/workspace/<name>-background.log"
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
-    local repo repo_path filename
+    local repo repo_path filename dl_tmp
     repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
     repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
     filename="$(basename "$url")"
-    mkdir -p "$dest_dir"
+    dl_tmp="$TMP_DIR/$filename"
+    mkdir -p "$dest_dir" "$dl_tmp"
     echo "Downloading: $url"
-    hf download "$repo" "$repo_path" --local-dir "$TMP_DIR"
-    mv -f "$TMP_DIR/$repo_path" "$dest_dir/$filename"
+    hf download "$repo" "$repo_path" --local-dir "$dl_tmp"
+    mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
   }
 
   echo "-------------------------------------------------------"
@@ -90,11 +91,13 @@ LOG_FILE="/workspace/<name>-background.log"
     pip install -q -r "$<NODE>_NODE_DIR/requirements.txt"
   fi
 
-  # Download models
+  # Download models (parallel)
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  download_hf_file "${HF_MODELS[<filename>]}" "$<DEST_DIR>"
+  download_hf_file "${HF_MODELS[<filename1>]}" "$<DEST_DIR>" &
+  download_hf_file "${HF_MODELS[<filename2>]}" "$<DEST_DIR>" &
+  wait
 
   rm -rf "$TMP_DIR"
 
@@ -143,7 +146,8 @@ exit 0
   - Text encoders: `$COMFY_ROOT/models/text_encoders/`
   - VAE: `$COMFY_ROOT/models/vae/`
   - Tool-specific models: `$COMFY_ROOT/models/<TOOLNAME>/`
-- **Use `TMP_DIR="/workspace/hf-downloads"`** — clean it before and after all downloads
+- **Use `TMP_DIR="/workspace/hf-downloads"`** — clean it before and after all downloads; each call uses its own subdir `$TMP_DIR/$filename` internally so parallel jobs don't collide
+- **Always run downloads in parallel** — background every `download_hf_file` call with `&` and add a single `wait` after the last one before proceeding
 - **Never hardcode URLs or git repos in .sh files** — add them to `registry.sh` and reference by key
 - **If a custom node is installed, always restart ComfyUI** after all downloads finish — kill the process, relaunch it, wait for 8188 to come back, then print the final ready message
 - **ComfyUI is a raw process** — there is no supervisor, so it must be relaunched manually with `.venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188` from `/workspace/runpod-slim/ComfyUI`. Do NOT use `python` — it is not on PATH, only the venv python is available
