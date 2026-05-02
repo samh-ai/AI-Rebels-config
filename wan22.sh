@@ -113,20 +113,10 @@ LOG_FILE="/workspace/wan22-background.log"
 
   rm -rf "$TMP_DIR"
 
-  # Install SageAttention (2.x not on PyPI, must build from source)
-  echo "Installing triton and sageattention..."
-  pip install -q triton
-  SAGE_DIR="/tmp/SageAttention"
-  rm -rf "$SAGE_DIR"
-  git clone --depth=1 https://github.com/thu-ml/SageAttention.git "$SAGE_DIR"
-  export EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
-  pip install "$SAGE_DIR" --no-build-isolation
-  rm -rf "$SAGE_DIR"
-
   echo "Downloads complete. Restarting ComfyUI to load node..."
   pkill -f "python main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 --use-sage-attention >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do
