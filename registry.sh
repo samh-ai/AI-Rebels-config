@@ -8,6 +8,7 @@ CUSTOM_NODES[seedvr2]="https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler"
 CUSTOM_NODES[rgthree]="https://github.com/rgthree/rgthree-comfy"
 CUSTOM_NODES[lanpaint]="https://github.com/scraed/LanPaint"
 CUSTOM_NODES[videohelper]="https://github.com/kosinkadink/ComfyUI-VideoHelperSuite"
+CUSTOM_NODES[frameinterp]="https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
 
 # HF models — key: filename, value: full download URL
 declare -A HF_MODELS
