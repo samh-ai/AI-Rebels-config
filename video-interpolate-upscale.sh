@@ -10,6 +10,7 @@ LOG_FILE="/workspace/video-interpolate-upscale-background.log"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   SEEDVR_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-SeedVR2_VideoUpscaler"
   FRAMEINTERP_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-Frame-Interpolation"
+  VIDEOHELPER_NODE_DIR="$CUSTOM_NODES_DIR/ComfyUI-VideoHelperSuite"
   SEEDVR_MODELS_DIR="$COMFY_ROOT/models/SEEDVR2"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -92,6 +93,19 @@ LOG_FILE="/workspace/video-interpolate-upscale-background.log"
     pip install -q -r "$FRAMEINTERP_NODE_DIR/requirements.txt"
   fi
 
+  # Install video helper node
+  if [ ! -d "$VIDEOHELPER_NODE_DIR" ]; then
+    echo "Cloning video helper node..."
+    git clone "${CUSTOM_NODES[videohelper]}" "$VIDEOHELPER_NODE_DIR"
+  else
+    echo "Video helper node already present, skipping clone."
+  fi
+
+  if [ -f "$VIDEOHELPER_NODE_DIR/requirements.txt" ]; then
+    echo "Installing video helper requirements..."
+    pip install -q -r "$VIDEOHELPER_NODE_DIR/requirements.txt"
+  fi
+
   # Download upscale models (parallel)
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
@@ -102,7 +116,7 @@ LOG_FILE="/workspace/video-interpolate-upscale-background.log"
 
   rm -rf "$TMP_DIR"
 
-  echo "Downloads complete. Restarting ComfyUI to load interpolation and upscale nodes..."
+  echo "Downloads complete. Restarting ComfyUI to load all nodes..."
   pkill -f "python main.py" || true
   sleep 3
   cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
