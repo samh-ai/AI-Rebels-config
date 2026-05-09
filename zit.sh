@@ -7,6 +7,8 @@ LOG_FILE="/workspace/zit-background.log"
   set -euo pipefail
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
+  CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
+  RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -61,10 +63,23 @@ LOG_FILE="/workspace/zit-background.log"
     exit 1
   fi
 
-  echo "ComfyUI is live. Starting model download..."
+  echo "ComfyUI is live. Installing custom node and downloading models..."
 
   if ! command -v hf >/dev/null 2>&1; then
     pip install -U "huggingface_hub[hf_transfer]"
+  fi
+
+  # Install custom node
+  if [ ! -d "$RGTHREE_NODE_DIR" ]; then
+    echo "Cloning rgthree-comfy..."
+    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  else
+    echo "Custom node already present, skipping clone."
+  fi
+
+  if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
+    echo "Installing requirements..."
+    pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
   fi
 
   rm -rf "$TMP_DIR"
@@ -76,6 +91,22 @@ LOG_FILE="/workspace/zit-background.log"
   wait
 
   rm -rf "$TMP_DIR"
+
+  echo "Downloads complete. Restarting ComfyUI to load node..."
+  pkill -f "python main.py" || true
+  sleep 3
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+
+  echo "Waiting for ComfyUI to come back online..."
+  for i in $(seq 1 300); do
+    if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then break; fi
+    sleep 2
+  done
+
+  if ! curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+    echo "Timed out waiting for ComfyUI to restart."
+    exit 1
+  fi
 
   echo "-------------------------------------------------------"
   echo "DOWNLOAD COMPLETE - Z-IMAGE-TURBO INSTALLED"
