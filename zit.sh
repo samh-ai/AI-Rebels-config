@@ -88,6 +88,9 @@ LOG_FILE="/workspace/zit-background.log"
   download_hf_file "${HF_MODELS[qwen_3_4b.safetensors]}" "$MODELS_DIR/text_encoders" &
   download_hf_file "${HF_MODELS[ae.safetensors]}" "$MODELS_DIR/vae" &
   download_hf_file "${HF_MODELS[z_image_turbo_bf16.safetensors]}" "$MODELS_DIR/diffusion_models" &
+  download_hf_file "${HF_MODELS[Mystic-XXX-ZIT-V6.safetensors]}" "$MODELS_DIR/loras" &
+  download_hf_file "${HF_MODELS[Z-Detail-Slider.safetensors]}" "$MODELS_DIR/loras" &
+  download_hf_file "${HF_MODELS[zimage-igbaddie_pruned.safetensors]}" "$MODELS_DIR/loras" &
   wait
 
   rm -rf "$TMP_DIR"

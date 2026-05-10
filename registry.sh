@@ -34,6 +34,9 @@ HF_MODELS[Flux2-Klein-9B-consistency-V2.safetensors]="https://huggingface.co/dx8
 HF_MODELS[bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors]="https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap/resolve/main/bfs_head_v1_flux-klein_9b_step3500_rank128.safetensors"
 HF_MODELS[wan2.2_i2v_high_ulitmate_pussy_asshole.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/wan2.2_i2v_high_ulitmate_pussy_asshole.safetensors"
 HF_MODELS[wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors"
+HF_MODELS[Mystic-XXX-ZIT-V6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Mystic-XXX-ZIT-V6.safetensors"
+HF_MODELS[Z-Detail-Slider.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Z-Detail-Slider.safetensors"
+HF_MODELS[zimage-igbaddie_pruned.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/zimage-igbaddie_pruned.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
