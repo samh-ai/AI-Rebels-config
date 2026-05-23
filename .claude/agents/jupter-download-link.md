@@ -6,7 +6,7 @@ model: haiku
 ---
 
 This is the folder structure: /workspace/runpod-slim/ComfyUI/
-use this as placholder civitai token : 421d249326360ce721f0ed775a772470
+use this as placholder civitai token : 50d1daceac946e23d3806893a8b7e46c
 
 ## Output rules
 

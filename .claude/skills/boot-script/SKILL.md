@@ -1,12 +1,47 @@
 ---
 name: boot-script
-description: Generate a new ComfyUI RunPod pod setup shell script for the AI-Rebels-config repo. Use this skill whenever the user wants to create a boot script, add support for a new model or workflow, or says things like "make a script for X", "create a .sh for [model/workflow]", "new pod script", "add [nodes/models] script", "setup script for [workflow name]". Always invoke this skill rather than writing scripts freehand.
+description: Generate or modify a ComfyUI RunPod pod setup shell script for the AI-Rebels-config repo. Use this skill whenever the user wants to create a boot script, modify an existing script (add/replace/remove models), or says things like "make a script for X", "create a .sh for [model/workflow]", "new pod script", "add [nodes/models] script", "setup script for [workflow name]", "add this model to [script]", "replace the model in [script]", "swap out [model] in [script]". Always invoke this skill rather than writing scripts freehand.
 model: sonnet
 ---
 
 # boot-script
 
-Generate a new setup script for the AI-Rebels-config repo.
+Generate a new setup script, or modify the model downloads in an existing one.
+
+## Step 0: Detect intent — new script or modify existing?
+
+- If the user references an **existing script** by name (e.g. "add X to foo.sh", "replace the model in bar.sh", "swap out Y for Z in baz.sh") → follow the **Modify path** below.
+- Otherwise → follow the **New script path**.
+
+---
+
+## MODIFY PATH — add or replace models in an existing script
+
+### M1: Read the target script and the registry
+
+Read the script from `scripts/<name>.sh` and read `registry.sh`. Do both in parallel.
+
+### M2: Validate registry keys
+
+Check that every model key the user wants to add/swap exists in `HF_MODELS` in `registry.sh`. If any key is missing, stop and tell the user — they must add it to `registry.sh` first.
+
+### M3: Apply the change — touch only the download lines
+
+Locate the parallel download block (lines of the form `download_hf_file "${HF_MODELS[...]}" "$MODELS_DIR/..."  &`).
+
+- **Add a model**: insert one new `download_hf_file` line before the `wait`, using the correct `$MODELS_DIR/<subdir>` for that model type.
+- **Replace a model**: swap the old `download_hf_file` line for the new one. Keep the destination subdir the same unless the user specifies otherwise.
+- **Remove a model**: delete only that `download_hf_file` line.
+
+**Do not touch any other part of the script** — not the header, variables, node installs, restart block, or log lines.
+
+### M4: Confirm
+
+Show the user a diff-style summary of exactly which lines changed. Nothing else.
+
+---
+
+## NEW SCRIPT PATH
 
 ## Step 1: Read the registry
 
