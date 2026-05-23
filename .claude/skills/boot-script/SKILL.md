@@ -1,9 +1,10 @@
 ---
-name: new-script
-description: Generate a new ComfyUI RunPod pod setup shell script for the AI-Rebels-config repo. Use this skill whenever the user wants to create a new setup script, add support for a new model or workflow, or says things like "make a script for X", "create a .sh for [model/workflow]", "new pod script", "add [nodes/models] script", "setup script for [workflow name]". Always invoke this skill rather than writing scripts freehand.
+name: boot-script
+description: Generate a new ComfyUI RunPod pod setup shell script for the AI-Rebels-config repo. Use this skill whenever the user wants to create a boot script, add support for a new model or workflow, or says things like "make a script for X", "create a .sh for [model/workflow]", "new pod script", "add [nodes/models] script", "setup script for [workflow name]". Always invoke this skill rather than writing scripts freehand.
+model: sonnet
 ---
 
-# new-script
+# boot-script
 
 Generate a new setup script for the AI-Rebels-config repo.
 

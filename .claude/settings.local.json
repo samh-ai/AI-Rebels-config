@@ -27,7 +27,10 @@
       "Bash(wsl python *)",
       "Bash(wsl --list)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(ls /mnt/c/Users/kyun1/OneDrive/Documents/GitHub/AI-Rebels-config/scripts/)"
+      "Bash(ls /mnt/c/Users/kyun1/OneDrive/Documents/GitHub/AI-Rebels-config/scripts/)",
+      "Bash(claude agent *)",
+      "Bash(claude.exe agent *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\kyun1\\\\OneDrive\\\\Documents\\\\GitHub\\\\AI-Rebels-config\\\\.claude\\\\skills\\\\upload-to-registry\")"
     ]
   }
 }
