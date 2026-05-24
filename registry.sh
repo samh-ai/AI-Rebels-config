@@ -22,6 +22,8 @@ HF_MODELS[seedvr2_ema_7b_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
+HF_MODELS[gonzalomoXLFluxPony_v70PhotoXLDMD.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/gonzalomoXLFluxPony_v70PhotoXLDMD.safetensors"
+HF_MODELS[intorealismUltra_v40.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/intorealismUltra_v40.safetensors"
 
 # GGUFs
 
