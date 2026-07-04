@@ -71,6 +71,8 @@ LOG_FILE="/workspace/krea2-background.log"
   git -C "$COMFY_ROOT" fetch --quiet --no-tags origin master
   git -C "$COMFY_ROOT" reset --hard --quiet origin/master
   echo "ComfyUI core updated to commit: $(git -C "$COMFY_ROOT" rev-parse --short HEAD)"
+  echo "Updating ComfyUI core dependencies..."
+  "$COMFY_ROOT/.venv-cu128/bin/python" -m pip install -q -r "$COMFY_ROOT/requirements.txt"
   # --- end ComfyUI core update ---
 
   # --- custom node installs ---
