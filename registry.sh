@@ -9,6 +9,7 @@ CUSTOM_NODES[rgthree]="https://github.com/rgthree/rgthree-comfy"
 CUSTOM_NODES[lanpaint]="https://github.com/scraed/LanPaint"
 CUSTOM_NODES[videohelper]="https://github.com/kosinkadink/ComfyUI-VideoHelperSuite"
 CUSTOM_NODES[frameinterp]="https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
+CUSTOM_NODES[kjnodes]="https://github.com/kijai/ComfyUI-KJNodes"
 
 # HF models — key: filename, value: full download URL
 declare -A HF_MODELS
@@ -19,6 +20,7 @@ HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]="https://huggingface
 HF_MODELS[z_image_turbo_bf16.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
 HF_MODELS[flux-2-klein-9b-fp8.safetensors]="https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/resolve/main/flux-2-klein-9b-fp8.safetensors"
 HF_MODELS[seedvr2_ema_7b_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/seedvr2_ema_7b_fp16.safetensors"
+HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors"
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
@@ -39,17 +41,20 @@ HF_MODELS[wan2.2_i2v_low_ulitmate_pussy_asshole.safetensors]="https://huggingfac
 HF_MODELS[Mystic-XXX-ZIT-V6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Mystic-XXX-ZIT-V6.safetensors"
 HF_MODELS[Z-Detail-Slider.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Z-Detail-Slider.safetensors"
 HF_MODELS[zimage-igbaddie_pruned.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/zimage-igbaddie_pruned.safetensors"
+HF_MODELS[realism_engine_krea2_v2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v2.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 HF_MODELS[qwen_3_4b.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
 HF_MODELS[qwen_3_8b_fp8mixed.safetensors]="https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
+HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
 
 # VAE
 HF_MODELS[wan_2.1_vae.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
 HF_MODELS[ema_vae_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/ema_vae_fp16.safetensors"
 HF_MODELS[ae.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
 HF_MODELS[flux2-vae.safetensors]="https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors"
+HF_MODELS[qwen_image_vae.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/vae/qwen_image_vae.safetensors"
 
 # Clip Vision
 HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"

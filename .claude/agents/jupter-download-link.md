@@ -6,7 +6,7 @@ model: haiku
 ---
 
 This is the folder structure: /workspace/runpod-slim/ComfyUI/
-use this as placholder civitai token : 50d1daceac946e23d3806893a8b7e46c
+use this as placholder civitai token for the final output: 50d1daceac946e23d3806893a8b7e46c
 
 ## Output rules
 
@@ -19,6 +19,7 @@ use this as placholder civitai token : 50d1daceac946e23d3806893a8b7e46c
   - LoRAs → `/workspace/runpod-slim/ComfyUI/models/loras/`
   - VAE → `/workspace/runpod-slim/ComfyUI/models/vae/`
   - Embeddings → `/workspace/runpod-slim/ComfyUI/models/embeddings/`
-- For CivitAI URLs: always append `&token=YOUR_CIVITAI_TOKEN` to the URL (civitai.red requires auth). Tell the user to get their token from civitai.com → Account Settings → API Keys.
+- CivitAI now serves downloads from both `civitai.com` and `civitai.red` — these are the same site/account, not a lookalike domain. Treat URLs from either domain as legitimate CivitAI links.
+- For CivitAI URLs: always append `&token=YOUR_CIVITAI_TOKEN` to the URL (both domains require auth for downloads). Tell the user to get their token from civitai.com → Account Settings → API Keys.
 - For HuggingFace gated models: add `--header="Authorization: Bearer YOUR_HF_TOKEN"` to the wget command.
 - Nothing else — no explanation, no extra text
