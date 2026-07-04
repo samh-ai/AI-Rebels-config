@@ -66,8 +66,11 @@ LOG_FILE="/workspace/krea2-background.log"
   fi
 
   # --- update ComfyUI core (needed for krea2 architecture support) ---
-  echo "Pulling latest ComfyUI core..."
-  git -C "$COMFY_ROOT" pull
+  # The baked repo has no upstream tracking, so a bare `git pull` fails.
+  echo "Updating ComfyUI core to latest master..."
+  git -C "$COMFY_ROOT" fetch --quiet --no-tags origin master
+  git -C "$COMFY_ROOT" reset --hard --quiet origin/master
+  echo "ComfyUI core updated to commit: $(git -C "$COMFY_ROOT" rev-parse --short HEAD)"
   # --- end ComfyUI core update ---
 
   # --- custom node installs ---
