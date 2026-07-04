@@ -8,6 +8,7 @@ LOG_FILE="/workspace/krea2-background.log"
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
+  RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -58,11 +59,28 @@ LOG_FILE="/workspace/krea2-background.log"
     exit 1
   fi
 
-  echo "ComfyUI is live. Downloading models..."
+  echo "ComfyUI is live. Updating ComfyUI core, installing custom node(s), and downloading models..."
 
   if ! command -v hf >/dev/null 2>&1; then
     pip install -U "huggingface_hub[hf_transfer]"
   fi
+
+  # --- update ComfyUI core (needed for krea2 architecture support) ---
+  echo "Pulling latest ComfyUI core..."
+  git -C "$COMFY_ROOT" pull
+  # --- end ComfyUI core update ---
+
+  # --- custom node installs ---
+  if [ ! -d "$RGTHREE_NODE_DIR" ]; then
+    echo "Cloning rgthree..."
+    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  else
+    echo "rgthree already present, skipping clone."
+  fi
+  if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
+    pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
+  fi
+  # --- end custom node installs ---
 
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
