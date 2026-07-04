@@ -73,6 +73,13 @@ LOG_FILE="/workspace/krea2-background.log"
   echo "ComfyUI core updated to commit: $(git -C "$COMFY_ROOT" rev-parse --short HEAD)"
   echo "Updating ComfyUI core dependencies..."
   "$COMFY_ROOT/.venv-cu128/bin/python" -m pip install -q -r "$COMFY_ROOT/requirements.txt"
+
+  # Newer ComfyUI 403s cross-site browser requests (Sec-Fetch-Site check),
+  # which breaks access through the RunPod proxy. --enable-cors-header disables that middleware.
+  ARGS_FILE="/workspace/runpod-slim/comfyui_args.txt"
+  if [ -f "$ARGS_FILE" ] && ! grep -q "enable-cors-header" "$ARGS_FILE"; then
+    echo "--enable-cors-header" >> "$ARGS_FILE"
+  fi
   # --- end ComfyUI core update ---
 
   # --- custom node installs ---
@@ -102,7 +109,7 @@ LOG_FILE="/workspace/krea2-background.log"
   echo "Downloads complete. Restarting ComfyUI to load custom node(s)..."
   pkill -f "python main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 --enable-cors-header >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do
