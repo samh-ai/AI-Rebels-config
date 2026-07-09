@@ -10,6 +10,7 @@ CUSTOM_NODES[lanpaint]="https://github.com/scraed/LanPaint"
 CUSTOM_NODES[videohelper]="https://github.com/kosinkadink/ComfyUI-VideoHelperSuite"
 CUSTOM_NODES[frameinterp]="https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
 CUSTOM_NODES[kjnodes]="https://github.com/kijai/ComfyUI-KJNodes"
+CUSTOM_NODES[res4lyf]="https://github.com/ClownsharkBatwing/RES4LYF"
 
 # HF models — key: filename, value: full download URL
 declare -A HF_MODELS
@@ -21,6 +22,7 @@ HF_MODELS[z_image_turbo_bf16.safetensors]="https://huggingface.co/Comfy-Org/z_im
 HF_MODELS[flux-2-klein-9b-fp8.safetensors]="https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8/resolve/main/flux-2-klein-9b-fp8.safetensors"
 HF_MODELS[seedvr2_ema_7b_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/seedvr2_ema_7b_fp16.safetensors"
 HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors"
+HF_MODELS[krea2_turbo_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_fp8_scaled.safetensors"
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
@@ -58,3 +60,8 @@ HF_MODELS[qwen_image_vae.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/r
 
 # Clip Vision
 HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
+
+# Original — upstream source URLs for files re-hosted on skhaai/airebels HF for faster download.
+# key: filename (matches the HF_MODELS key), value: the original download URL it was copied from.
+declare -A ORIGINAL
+ORIGINAL[snofs_krea_v1_1.safetensors]="https://civitai.red/api/download/models/3104629?fileId=2984442"

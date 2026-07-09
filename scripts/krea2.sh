@@ -9,6 +9,7 @@ LOG_FILE="/workspace/krea2-background.log"
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
+  RES4LYF_NODE_DIR="$CUSTOM_NODES_DIR/RES4LYF"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -92,6 +93,15 @@ LOG_FILE="/workspace/krea2-background.log"
   if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
   fi
+  if [ ! -d "$RES4LYF_NODE_DIR" ]; then
+    echo "Cloning res4lyf..."
+    git clone "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  else
+    echo "res4lyf already present, skipping clone."
+  fi
+  if [ -f "$RES4LYF_NODE_DIR/requirements.txt" ]; then
+    pip install -q -r "$RES4LYF_NODE_DIR/requirements.txt"
+  fi
   # --- end custom node installs ---
 
   rm -rf "$TMP_DIR"
@@ -99,6 +109,7 @@ LOG_FILE="/workspace/krea2-background.log"
 
   # parallel downloads
   download_hf_file "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}" "$MODELS_DIR/diffusion_models" &
+  download_hf_file "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}" "$MODELS_DIR/diffusion_models" &
   download_hf_file "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}" "$MODELS_DIR/text_encoders" &
   download_hf_file "${HF_MODELS[qwen_image_vae.safetensors]}" "$MODELS_DIR/vae" &
   download_hf_file "${HF_MODELS[realism_engine_krea2_v2.safetensors]}" "$MODELS_DIR/loras" &
