@@ -44,6 +44,7 @@ HF_MODELS[Mystic-XXX-ZIT-V6.safetensors]="https://huggingface.co/skhaai/airebels
 HF_MODELS[Z-Detail-Slider.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Z-Detail-Slider.safetensors"
 HF_MODELS[zimage-igbaddie_pruned.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/zimage-igbaddie_pruned.safetensors"
 HF_MODELS[realism_engine_krea2_v2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v2.safetensors"
+HF_MODELS[snofs_krea_v1_1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/snofs_krea_v1_1.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
