@@ -66,14 +66,20 @@ LOG_FILE="/workspace/krea2-background.log"
     pip install -U "huggingface_hub[hf_transfer]"
   fi
 
-  # --- update ComfyUI core (needed for krea2 architecture support) ---
+  # --- update ComfyUI core (krea2 needs >= v0.26.0; baked image is v0.17.2) ---
+  # Pinned to a fixed release so boot time and dependencies don't drift with upstream master.
   # The baked repo has no upstream tracking, so a bare `git pull` fails.
-  echo "Updating ComfyUI core to latest master..."
-  git -C "$COMFY_ROOT" fetch --quiet --no-tags origin master
-  git -C "$COMFY_ROOT" reset --hard --quiet origin/master
-  echo "ComfyUI core updated to commit: $(git -C "$COMFY_ROOT" rev-parse --short HEAD)"
-  echo "Updating ComfyUI core dependencies..."
-  "$COMFY_ROOT/.venv-cu128/bin/python" -m pip install -q -r "$COMFY_ROOT/requirements.txt"
+  COMFY_PIN="v0.28.0"
+  if [ "$(git -C "$COMFY_ROOT" describe --tags --exact-match 2>/dev/null || true)" = "$COMFY_PIN" ]; then
+    echo "ComfyUI core already at $COMFY_PIN, skipping update."
+  else
+    echo "Updating ComfyUI core to $COMFY_PIN..."
+    git -C "$COMFY_ROOT" fetch --quiet --depth 1 origin tag "$COMFY_PIN"
+    git -C "$COMFY_ROOT" reset --hard --quiet "$COMFY_PIN"
+    echo "ComfyUI core updated to: $COMFY_PIN ($(git -C "$COMFY_ROOT" rev-parse --short HEAD))"
+    echo "Updating ComfyUI core dependencies..."
+    "$COMFY_ROOT/.venv-cu128/bin/python" -m pip install -q -r "$COMFY_ROOT/requirements.txt"
+  fi
 
   # Newer ComfyUI 403s cross-site browser requests (Sec-Fetch-Site check),
   # which breaks access through the RunPod proxy. --enable-cors-header disables that middleware.
