@@ -2,6 +2,9 @@
 set -euo pipefail
 
 LOG_FILE="/workspace/krea2-background.log"
+# If the log file can't be created (e.g. /workspace not mounted yet), fall back
+# to /dev/null so tee never kills the watcher.
+touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
 (
   set -euo pipefail
@@ -32,6 +35,7 @@ LOG_FILE="/workspace/krea2-background.log"
     echo "Downloading: $url"
     hf download "$repo" "$repo_path" --local-dir "$dl_tmp"
     mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
+    echo "Finished: $filename"
   }
 
   echo "-------------------------------------------------------"
@@ -77,8 +81,11 @@ LOG_FILE="/workspace/krea2-background.log"
     git -C "$COMFY_ROOT" fetch --quiet --depth 1 origin tag "$COMFY_PIN"
     git -C "$COMFY_ROOT" reset --hard --quiet "$COMFY_PIN"
     echo "ComfyUI core updated to: $COMFY_PIN ($(git -C "$COMFY_ROOT" rev-parse --short HEAD))"
-    echo "Updating ComfyUI core dependencies..."
+    echo "Updating ComfyUI core dependencies... (slow step: torch wheels, often 5-15 min with no output)"
+    DEPS_START=$SECONDS
     "$COMFY_ROOT/.venv-cu128/bin/python" -m pip install -q -r "$COMFY_ROOT/requirements.txt"
+    DEPS_TOOK=$((SECONDS - DEPS_START))
+    echo "Core dependencies installed. (took $((DEPS_TOOK / 60))m$((DEPS_TOOK % 60))s)"
   fi
 
   # Newer ComfyUI 403s cross-site browser requests (Sec-Fetch-Site check),
@@ -98,6 +105,7 @@ LOG_FILE="/workspace/krea2-background.log"
   fi
   if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
+    echo "rgthree requirements installed."
   fi
   if [ ! -d "$RES4LYF_NODE_DIR" ]; then
     echo "Cloning res4lyf..."
@@ -107,6 +115,7 @@ LOG_FILE="/workspace/krea2-background.log"
   fi
   if [ -f "$RES4LYF_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RES4LYF_NODE_DIR/requirements.txt"
+    echo "res4lyf requirements installed."
   fi
   # --- end custom node installs ---
 
@@ -144,7 +153,7 @@ LOG_FILE="/workspace/krea2-background.log"
   echo "DOWNLOAD COMPLETE - KREA2 INSTALLED"
   echo "-------------------------------------------------------"
 
-) >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+) 2>&1 | tee -a "$LOG_FILE" >> /proc/1/fd/1 &
 
 echo "krea2.sh: background watcher started, main boot can continue"
 echo "krea2.sh: tail -f $LOG_FILE"
