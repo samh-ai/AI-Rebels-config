@@ -13,6 +13,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
   RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   RES4LYF_NODE_DIR="$CUSTOM_NODES_DIR/RES4LYF"
+  KREA2EDIT_NODE_DIR="$CUSTOM_NODES_DIR/comfyui-krea2edit"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -117,6 +118,16 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     pip install -q -r "$RES4LYF_NODE_DIR/requirements.txt"
     echo "res4lyf requirements installed."
   fi
+  if [ ! -d "$KREA2EDIT_NODE_DIR" ]; then
+    echo "Cloning krea2edit..."
+    git clone "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
+  else
+    echo "krea2edit already present, skipping clone."
+  fi
+  if [ -f "$KREA2EDIT_NODE_DIR/requirements.txt" ]; then
+    pip install -q -r "$KREA2EDIT_NODE_DIR/requirements.txt"
+    echo "krea2edit requirements installed."
+  fi
   # --- end custom node installs ---
 
   rm -rf "$TMP_DIR"
@@ -129,6 +140,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   download_hf_file "${HF_MODELS[qwen_image_vae.safetensors]}" "$MODELS_DIR/vae" &
   download_hf_file "${HF_MODELS[realism_engine_krea2_v2.safetensors]}" "$MODELS_DIR/loras" &
   download_hf_file "${HF_MODELS[snofs_krea_v1_1.safetensors]}" "$MODELS_DIR/loras" &
+  download_hf_file "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}" "$MODELS_DIR/loras" &
   wait
 
   rm -rf "$TMP_DIR"

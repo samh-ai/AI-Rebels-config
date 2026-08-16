@@ -11,6 +11,7 @@ CUSTOM_NODES[videohelper]="https://github.com/kosinkadink/ComfyUI-VideoHelperSui
 CUSTOM_NODES[frameinterp]="https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"
 CUSTOM_NODES[kjnodes]="https://github.com/kijai/ComfyUI-KJNodes"
 CUSTOM_NODES[res4lyf]="https://github.com/ClownsharkBatwing/RES4LYF"
+CUSTOM_NODES[krea2edit]="https://github.com/lbouaraba/comfyui-krea2edit"
 
 # HF models — key: filename, value: full download URL
 declare -A HF_MODELS
@@ -45,6 +46,7 @@ HF_MODELS[Z-Detail-Slider.safetensors]="https://huggingface.co/skhaai/airebels/r
 HF_MODELS[zimage-igbaddie_pruned.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/zimage-igbaddie_pruned.safetensors"
 HF_MODELS[realism_engine_krea2_v2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v2.safetensors"
 HF_MODELS[snofs_krea_v1_1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/snofs_krea_v1_1.safetensors"
+HF_MODELS[krea2_identity_edit_v1_2.safetensors]="https://huggingface.co/conradlocke/krea2-identity-edit/resolve/main/krea2_identity_edit_v1_2.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
