@@ -105,10 +105,20 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # documents as more expensive than a full fetch, and the likely trigger for the
   # "fetch-pack: unexpected disconnect while reading sideband packet" on attempt 1.
   CLONE_TIMEOUT=240
+  CLONE_KILL_GRACE=30
   if command -v timeout >/dev/null 2>&1; then
-    TIMEOUT_CMD="timeout $CLONE_TIMEOUT"
+    # --kill-after is not optional. Plain `timeout N` only sends SIGTERM at N and then
+    # blocks waiting for the child; if the child does not die from SIGTERM it waits
+    # forever, so it caps nothing. Measured: `timeout 3` against a SIGTERM-ignoring child
+    # returned after 60s, not 3s. That is what left a res4lyf clone silent for 12+ minutes
+    # past a 240s "timeout". --kill-after escalates to SIGKILL so the bound is real.
+    TIMEOUT_CMD="timeout --kill-after=$CLONE_KILL_GRACE $CLONE_TIMEOUT"
+    CLONE_LIMIT_DESC="${CLONE_TIMEOUT}s timeout, SIGKILL at $((CLONE_TIMEOUT + CLONE_KILL_GRACE))s"
   else
+    # Never claim a timeout we are not applying - the old code printed "240s timeout"
+    # even in this branch, which made an uncapped hang impossible to diagnose from the log.
     TIMEOUT_CMD=""
+    CLONE_LIMIT_DESC="NO TIMEOUT - 'timeout' not found on PATH"
   fi
 
   die() {
@@ -126,14 +136,23 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
       echo "$name already present, skipping clone."
       return 0
     fi
-    local attempt
+    local attempt rc start
     for attempt in 1 2; do
-      echo "Cloning $name (attempt $attempt/2, ${CLONE_TIMEOUT}s timeout)..."
-      if $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest"; then
-        echo "Cloned $name."
+      echo "Cloning $name (attempt $attempt/2, $CLONE_LIMIT_DESC)..."
+      start=$SECONDS
+      rc=0
+      $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest" || rc=$?
+      if [ "$rc" -eq 0 ]; then
+        echo "Cloned $name in $((SECONDS - start))s."
         return 0
       fi
-      echo "Clone of $name failed or timed out (attempt $attempt/2)."
+      # Say which failure this was. The old code printed one message for every case, so a
+      # timeout and a git error were indistinguishable in the log.
+      case "$rc" in
+        124) echo "Clone of $name TIMED OUT after $((SECONDS - start))s (attempt $attempt/2)." ;;
+        137) echo "Clone of $name ignored SIGTERM, SIGKILLed after $((SECONDS - start))s (attempt $attempt/2)." ;;
+        *)   echo "Clone of $name FAILED, git exit $rc after $((SECONDS - start))s (attempt $attempt/2)." ;;
+      esac
       rm -rf "$dest"
     done
     die "could not clone $name after 2 attempts"
