@@ -68,9 +68,51 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   echo "ComfyUI is live at $(git -C "$COMFY_ROOT" describe --tags 2>/dev/null || echo unknown)."
   echo "No core update needed (image bakes a current ComfyUI). Installing custom node(s) and downloading models..."
 
-  if ! command -v hf >/dev/null 2>&1; then
-    pip install -U "huggingface_hub[hf_transfer]"
+  # RunPod runs ComfyUI from system python on the cuda12.8 image and from .venv-cu128
+  # on older ones. Follow whichever interpreter is actually serving 8188 so node
+  # requirements and the restart at the end land in the same environment.
+  COMFY_PY="$(readlink -f "/proc/$(pgrep -f 'main\.py' | head -1)/exe" 2>/dev/null || true)"
+  if [ ! -x "$COMFY_PY" ]; then
+    COMFY_PY="$COMFY_ROOT/.venv-cu128/bin/python"
   fi
+  echo "Using interpreter: $COMFY_PY"
+
+  if ! command -v hf >/dev/null 2>&1; then
+    "$COMFY_PY" -m pip install -q -U "huggingface_hub[hf_transfer]"
+  fi
+
+  # Shallow + HTTP/1.1 + retry. Full clones of large repos over HTTP/2 die with
+  # "curl 92 ... stream not closed cleanly" on slow hosts. A failed clone is
+  # reported at the end rather than aborting the run, so model downloads still happen.
+  FAILED_NODES=""
+  clone_node() {
+    local name="$1" url="$2" dest="$3"
+    if [ -d "$dest" ]; then
+      echo "$name already present, skipping clone."
+      return 0
+    fi
+    local attempt
+    for attempt in 1 2 3; do
+      echo "Cloning $name (attempt $attempt/3)..."
+      if git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
+        echo "Cloned $name."
+        return 0
+      fi
+      echo "Clone of $name failed (attempt $attempt/3)."
+      rm -rf "$dest"
+      sleep 10
+    done
+    echo "ERROR: could not clone $name after 3 attempts."
+    return 1
+  }
+
+  install_node_reqs() {
+    local name="$1" dir="$2"
+    if [ -f "$dir/requirements.txt" ]; then
+      "$COMFY_PY" -m pip install -q -r "$dir/requirements.txt"
+      echo "$name requirements installed."
+    fi
+  }
 
   # Newer ComfyUI 403s cross-site browser requests (Sec-Fetch-Site check),
   # which breaks access through the RunPod proxy. --enable-cors-header disables that middleware.
@@ -80,35 +122,20 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   # --- custom node installs ---
-  if [ ! -d "$RGTHREE_NODE_DIR" ]; then
-    echo "Cloning rgthree..."
-    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  if clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"; then
+    install_node_reqs "rgthree" "$RGTHREE_NODE_DIR"
   else
-    echo "rgthree already present, skipping clone."
+    FAILED_NODES="$FAILED_NODES rgthree"
   fi
-  if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
-    pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
-    echo "rgthree requirements installed."
-  fi
-  if [ ! -d "$RES4LYF_NODE_DIR" ]; then
-    echo "Cloning res4lyf..."
-    git clone "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  if clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"; then
+    install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
   else
-    echo "res4lyf already present, skipping clone."
+    FAILED_NODES="$FAILED_NODES res4lyf"
   fi
-  if [ -f "$RES4LYF_NODE_DIR/requirements.txt" ]; then
-    pip install -q -r "$RES4LYF_NODE_DIR/requirements.txt"
-    echo "res4lyf requirements installed."
-  fi
-  if [ ! -d "$KREA2EDIT_NODE_DIR" ]; then
-    echo "Cloning krea2edit..."
-    git clone "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
+  if clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"; then
+    install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
   else
-    echo "krea2edit already present, skipping clone."
-  fi
-  if [ -f "$KREA2EDIT_NODE_DIR/requirements.txt" ]; then
-    pip install -q -r "$KREA2EDIT_NODE_DIR/requirements.txt"
-    echo "krea2edit requirements installed."
+    FAILED_NODES="$FAILED_NODES krea2edit"
   fi
   # --- end custom node installs ---
 
@@ -137,9 +164,9 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
 
   echo "Downloads complete. Restarting ComfyUI to load custom node(s)..."
-  pkill -f "python main.py" || true
+  pkill -f "main.py" || true
   sleep 3
-  cd /workspace/runpod-slim/ComfyUI && .venv-cu128/bin/python main.py --listen 0.0.0.0 --port 8188 --enable-cors-header >> /proc/1/fd/1 2>> /proc/1/fd/2 &
+  cd "$COMFY_ROOT" && "$COMFY_PY" main.py --listen 0.0.0.0 --port 8188 --enable-cors-header >> /proc/1/fd/1 2>> /proc/1/fd/2 &
 
   echo "Waiting for ComfyUI to come back online..."
   for i in $(seq 1 300); do
@@ -153,7 +180,12 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   echo "-------------------------------------------------------"
-  echo "DOWNLOAD COMPLETE - KREA2 LATEST INSTALLED"
+  if [ -n "$FAILED_NODES" ]; then
+    echo "DONE WITH ERRORS - these node(s) failed to clone:$FAILED_NODES"
+  else
+    echo "DOWNLOAD COMPLETE - KREA2 LATEST INSTALLED"
+  fi
+  echo "Total elapsed: $((SECONDS / 60))m$((SECONDS % 60))s"
   echo "-------------------------------------------------------"
 
 ) 2>&1 | tee -a "$LOG_FILE" >> /proc/1/fd/1 &
