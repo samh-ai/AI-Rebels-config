@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-LOG_FILE="/workspace/krea2-latest-background.log"
+LOG_FILE="/workspace/krea2v2-background.log"
 # If the log file can't be created (e.g. /workspace not mounted yet), fall back
 # to /dev/null so tee never kills the watcher.
 touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
@@ -40,7 +40,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   }
 
   echo "-------------------------------------------------------"
-  echo "BACKGROUND WATCHER STARTED: KREA2 LATEST CONFIG"
+  echo "BACKGROUND WATCHER STARTED: KREA2 V2 CONFIG"
   echo "-------------------------------------------------------"
 
   echo "Waiting for ComfyUI root to exist..."
@@ -186,12 +186,12 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   echo "-------------------------------------------------------"
-  echo "DOWNLOAD COMPLETE - KREA2 LATEST INSTALLED"
+  echo "DOWNLOAD COMPLETE - KREA2 V2 INSTALLED"
   echo "Total elapsed: $((SECONDS / 60))m$((SECONDS % 60))s"
   echo "-------------------------------------------------------"
 
 ) 2>&1 | tee -a "$LOG_FILE" >> /proc/1/fd/1 &
 
-echo "krea2-latest.sh: background watcher started, main boot can continue"
-echo "krea2-latest.sh: tail -f $LOG_FILE"
+echo "krea2v2.sh: background watcher started, main boot can continue"
+echo "krea2v2.sh: tail -f $LOG_FILE"
 exit 0

@@ -1,12 +1,12 @@
-name: Build and Push Docker Image (CUDA 12.8)
+name: Build and Push Docker Image (stablev2)
 
 on:
   push:
     branches: [ "main" ]
     paths:
-      - 'docker/Dockerfile.cuda12.8'
+      - 'docker/Dockerfile.stablev2'
       - 'docker/boot.sh'
-      - '.github/workflows/docker-build-cuda12.8.yml'
+      - '.github/workflows/docker-build-stablev2.yml'
   workflow_dispatch:
 
 jobs:
@@ -30,6 +30,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile.cuda12.8
+          file: ./docker/Dockerfile.stablev2
           push: true
-          tags: airebels/comfyui:cuda12.8
+          tags: airebels/comfyui:stablev2
