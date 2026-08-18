@@ -23,33 +23,71 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # HF_HUB_ENABLE_HF_TRANSFER is gone: all Hub transfers go through hf-xet now and the
   # variable is a documented no-op.
   #
-  # HF_XET_HIGH_PERFORMANCE is gone because it OOM-killed this pod. It is documented as
-  # needing >=64GB RAM; a 4090 pod has 31GB. Per process it raises the download buffers
-  # from 2GB working / 512MB per-file / 8GB hard limit to 16GB / 2GB / 64GB, and raises
-  # initial download concurrency from 1 to 16 (max 64 -> 124). With seven download
-  # processes that is 112 streams on 12 vCPUs, which blows past the adaptive controller's
-  # 90s healthy-RTT, gets scored as failures, and retries with backoff - the cause of both
-  # the OOM and the 2min-to-20min+ boot time swing.
+  # HF_XET_HIGH_PERFORMANCE is gone because it OOM-killed this pod (documented as needing
+  # >=64GB RAM; this pod's cgroup limit was 28GB).
+  #
+  # HF_HUB_DISABLE_XET=1 disables the xet transport entirely. This is not a tuning choice,
+  # it is a workaround for an open, unresolved hf-xet defect: downloads silently stall
+  # forever mid-transfer with no error, no timeout, and near-zero CPU - matching what we
+  # saw here (two `hf download` processes alive for 30+ minutes, <100MB RSS each, no
+  # progress). Reported and reproduced independently in
+  # https://github.com/huggingface/xet-core/issues/850 ,
+  # https://github.com/huggingface/xet-core/issues/789 , and
+  # https://github.com/huggingface/huggingface_hub/issues/4520 (open). In every case the
+  # documented fix is HF_HUB_DISABLE_XET=1, which falls back to a plain HTTPS download -
+  # slower, but it actually finishes. #789's diagnosis: xet's CDN delivers chunks out of
+  # order at scale, collapsing the TCP congestion window until the transfer never recovers.
+  export HF_HUB_DISABLE_XET=1
   export HF_HUB_DOWNLOAD_TIMEOUT=60
 
-  # Each hf process is an independent xet client with its own buffer pool, so peak download
-  # memory scales with how many run at once. At the defaults above, 2 concurrent bounds it
-  # to ~4GB typical / 16GB worst case, which fits 31GB alongside ComfyUI.
+  # Belt-and-suspenders even with xet disabled: HF_HUB_DOWNLOAD_TIMEOUT only bounds the
+  # HTTP read timeout, not the whole `hf download` process, so a stuck download could still
+  # hang the script indefinitely otherwise. Same fix as clone_node: wrap in `timeout
+  # --kill-after` (plain `timeout N` only sends SIGTERM at N and then waits for the child -
+  # if the child ignores it, timeout blocks forever too; measured elsewhere in this script).
+  # 3 attempts, since huggingface_hub resumes partial local-dir downloads from where they
+  # left off rather than restarting, so a retry after a timeout is cheap, not a full redo.
+  DOWNLOAD_TIMEOUT=600
+  DOWNLOAD_KILL_GRACE=30
+  if command -v timeout >/dev/null 2>&1; then
+    DL_TIMEOUT_CMD="timeout --kill-after=$DOWNLOAD_KILL_GRACE $DOWNLOAD_TIMEOUT"
+    DOWNLOAD_LIMIT_DESC="${DOWNLOAD_TIMEOUT}s timeout, SIGKILL at $((DOWNLOAD_TIMEOUT + DOWNLOAD_KILL_GRACE))s"
+  else
+    DL_TIMEOUT_CMD=""
+    DOWNLOAD_LIMIT_DESC="NO TIMEOUT - 'timeout' not found on PATH"
+  fi
+
+  # Each hf process is an independent client, so peak concurrent bandwidth/memory scales
+  # with how many run at once. 2 concurrent keeps that bounded.
   MAX_PARALLEL_DOWNLOADS=2
 
   download_hf_file() {
     local url="$1"
     local dest_dir="$2"
-    local repo repo_path filename dl_tmp
+    local repo repo_path filename dl_tmp attempt rc start
     repo="$(echo "$url" | sed -E 's#https://huggingface.co/([^/]+/[^/]+)/.*#\1#')"
     repo_path="$(echo "$url" | sed -E 's#https://huggingface.co/[^/]+/[^/]+/resolve/[^/]+/##')"
     filename="$(basename "$url")"
     dl_tmp="$TMP_DIR/$filename"
     mkdir -p "$dest_dir" "$dl_tmp"
-    echo "Downloading: $url"
-    hf download "$repo" "$repo_path" --local-dir "$dl_tmp"
-    mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
-    echo "Finished: $filename"
+    for attempt in 1 2 3; do
+      echo "Downloading: $url (attempt $attempt/3, $DOWNLOAD_LIMIT_DESC)"
+      start=$SECONDS
+      rc=0
+      $DL_TIMEOUT_CMD hf download "$repo" "$repo_path" --local-dir "$dl_tmp" || rc=$?
+      if [ "$rc" -eq 0 ]; then
+        mv -f "$dl_tmp/$repo_path" "$dest_dir/$filename"
+        echo "Finished: $filename in $((SECONDS - start))s (attempt $attempt/3)."
+        return 0
+      fi
+      case "$rc" in
+        124) echo "Download of $filename TIMED OUT after $((SECONDS - start))s (attempt $attempt/3)." ;;
+        137) echo "Download of $filename ignored SIGTERM, SIGKILLed after $((SECONDS - start))s (attempt $attempt/3)." ;;
+        *)   echo "Download of $filename FAILED, hf exit $rc after $((SECONDS - start))s (attempt $attempt/3)." ;;
+      esac
+    done
+    echo "Download of $filename failed after 3 attempts."
+    return 1
   }
 
   echo "-------------------------------------------------------"
@@ -194,11 +232,30 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  # Throttled downloads. Biggest first so the two heavy files (~12.8GB and ~12.2GB) pair up
-  # once and the rest trail behind them, rather than landing together at the end.
-  DOWNLOAD_QUEUE=(
+  # run_queue launches entries up to $2 at a time, waiting for a free slot before starting
+  # the next one. A prior version of this script put the two ~12GB diffusion models first
+  # in a single concurrency-2 queue, which made them the pair that launched together - the
+  # opposite of the intent. Fixed by running the two large files through their own
+  # concurrency-1 queue (never overlapping each other or anything else), then the small
+  # files through concurrency-2.
+  run_queue() {
+    local -n _queue="$1"
+    local max="$2"
+    local entry
+    for entry in "${_queue[@]}"; do
+      while [ "$(jobs -rp | wc -l)" -ge "$max" ]; do
+        wait -n || die "a model download failed"
+      done
+      download_hf_file "${entry%%|*}" "${entry##*|}" &
+    done
+    wait || die "one or more model downloads failed"
+  }
+
+  LARGE_DOWNLOAD_QUEUE=(
     "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
+  )
+  SMALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
     "${HF_MODELS[realism_engine_krea2_v2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[snofs_krea_v1_1.safetensors]}|$MODELS_DIR/loras"
@@ -206,14 +263,10 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
   )
 
-  echo "Downloading ${#DOWNLOAD_QUEUE[@]} files, max $MAX_PARALLEL_DOWNLOADS at a time..."
-  for entry in "${DOWNLOAD_QUEUE[@]}"; do
-    while [ "$(jobs -rp | wc -l)" -ge "$MAX_PARALLEL_DOWNLOADS" ]; do
-      wait -n || die "a model download failed"
-    done
-    download_hf_file "${entry%%|*}" "${entry##*|}" &
-  done
-  wait || die "one or more model downloads failed"
+  echo "Downloading ${#LARGE_DOWNLOAD_QUEUE[@]} large file(s) one at a time..."
+  run_queue LARGE_DOWNLOAD_QUEUE 1
+  echo "Downloading ${#SMALL_DOWNLOAD_QUEUE[@]} remaining file(s), max $MAX_PARALLEL_DOWNLOADS at a time..."
+  run_queue SMALL_DOWNLOAD_QUEUE "$MAX_PARALLEL_DOWNLOADS"
 
   rm -rf "$TMP_DIR"
 
