@@ -86,7 +86,12 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # CLONE_TIMEOUT caps the stall: a bad host once hung a clone for 12 minutes before
   # erroring out. Shallow + HTTP/1.1 keep the transfer small and avoid the HTTP/2
   # "curl 92 stream not closed cleanly" failure that killed it.
-  CLONE_TIMEOUT=180
+  CLONE_TIMEOUT=240
+  if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD="timeout $CLONE_TIMEOUT"
+  else
+    TIMEOUT_CMD=""
+  fi
 
   die() {
     echo "======================================================="
@@ -106,7 +111,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     local attempt
     for attempt in 1 2; do
       echo "Cloning $name (attempt $attempt/2, ${CLONE_TIMEOUT}s timeout)..."
-      if timeout "$CLONE_TIMEOUT" git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
+      if $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
         echo "Cloned $name."
         return 0
       fi
