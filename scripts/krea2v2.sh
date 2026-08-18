@@ -20,9 +20,22 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
   source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
 
-  export HF_HUB_ENABLE_HF_TRANSFER=1
-  export HF_XET_HIGH_PERFORMANCE=1
+  # HF_HUB_ENABLE_HF_TRANSFER is gone: all Hub transfers go through hf-xet now and the
+  # variable is a documented no-op.
+  #
+  # HF_XET_HIGH_PERFORMANCE is gone because it OOM-killed this pod. It is documented as
+  # needing >=64GB RAM; a 4090 pod has 31GB. Per process it raises the download buffers
+  # from 2GB working / 512MB per-file / 8GB hard limit to 16GB / 2GB / 64GB, and raises
+  # initial download concurrency from 1 to 16 (max 64 -> 124). With seven download
+  # processes that is 112 streams on 12 vCPUs, which blows past the adaptive controller's
+  # 90s healthy-RTT, gets scored as failures, and retries with backoff - the cause of both
+  # the OOM and the 2min-to-20min+ boot time swing.
   export HF_HUB_DOWNLOAD_TIMEOUT=60
+
+  # Each hf process is an independent xet client with its own buffer pool, so peak download
+  # memory scales with how many run at once. At the defaults above, 2 concurrent bounds it
+  # to ~4GB typical / 16GB worst case, which fits 31GB alongside ComfyUI.
+  MAX_PARALLEL_DOWNLOADS=2
 
   download_hf_file() {
     local url="$1"
@@ -157,14 +170,25 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  # parallel downloads
-  download_hf_file "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}" "$MODELS_DIR/diffusion_models" &
-  download_hf_file "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}" "$MODELS_DIR/diffusion_models" &
-  download_hf_file "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}" "$MODELS_DIR/text_encoders" &
-  download_hf_file "${HF_MODELS[qwen_image_vae.safetensors]}" "$MODELS_DIR/vae" &
-  download_hf_file "${HF_MODELS[realism_engine_krea2_v2.safetensors]}" "$MODELS_DIR/loras" &
-  download_hf_file "${HF_MODELS[snofs_krea_v1_1.safetensors]}" "$MODELS_DIR/loras" &
-  download_hf_file "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}" "$MODELS_DIR/loras" &
+  # Throttled downloads. Biggest first so the two heavy files (~12.8GB and ~12.2GB) pair up
+  # once and the rest trail behind them, rather than landing together at the end.
+  DOWNLOAD_QUEUE=(
+    "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
+    "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
+    "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
+    "${HF_MODELS[realism_engine_krea2_v2.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[snofs_krea_v1_1.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
+  )
+
+  echo "Downloading ${#DOWNLOAD_QUEUE[@]} files, max $MAX_PARALLEL_DOWNLOADS at a time..."
+  for entry in "${DOWNLOAD_QUEUE[@]}"; do
+    while [ "$(jobs -rp | wc -l)" -ge "$MAX_PARALLEL_DOWNLOADS" ]; do
+      wait -n || die "a model download failed"
+    done
+    download_hf_file "${entry%%|*}" "${entry##*|}" &
+  done
   wait || die "one or more model downloads failed"
 
   rm -rf "$TMP_DIR"
