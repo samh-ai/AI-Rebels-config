@@ -81,10 +81,22 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "$COMFY_PY" -m pip install -q -U "huggingface_hub[hf_transfer]"
   fi
 
-  # Shallow + HTTP/1.1 + retry. Full clones of large repos over HTTP/2 die with
-  # "curl 92 ... stream not closed cleanly" on slow hosts. A failed clone is
-  # reported at the end rather than aborting the run, so model downloads still happen.
-  FAILED_NODES=""
+  # A pod missing a node is unusable and has to be redeployed, so fail fast and loud
+  # rather than spending 20 more minutes downloading models nobody will use.
+  # CLONE_TIMEOUT caps the stall: a bad host once hung a clone for 12 minutes before
+  # erroring out. Shallow + HTTP/1.1 keep the transfer small and avoid the HTTP/2
+  # "curl 92 stream not closed cleanly" failure that killed it.
+  CLONE_TIMEOUT=180
+
+  die() {
+    echo "======================================================="
+    echo "SETUP FAILED: $1"
+    echo "Nothing further will run. Redeploy the pod."
+    echo "Failed after $((SECONDS / 60))m$((SECONDS % 60))s."
+    echo "======================================================="
+    exit 1
+  }
+
   clone_node() {
     local name="$1" url="$2" dest="$3"
     if [ -d "$dest" ]; then
@@ -92,18 +104,16 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
       return 0
     fi
     local attempt
-    for attempt in 1 2 3; do
-      echo "Cloning $name (attempt $attempt/3)..."
-      if git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
+    for attempt in 1 2; do
+      echo "Cloning $name (attempt $attempt/2, ${CLONE_TIMEOUT}s timeout)..."
+      if timeout "$CLONE_TIMEOUT" git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
         echo "Cloned $name."
         return 0
       fi
-      echo "Clone of $name failed (attempt $attempt/3)."
+      echo "Clone of $name failed or timed out (attempt $attempt/2)."
       rm -rf "$dest"
-      sleep 10
     done
-    echo "ERROR: could not clone $name after 3 attempts."
-    return 1
+    die "could not clone $name after 2 attempts"
   }
 
   install_node_reqs() {
@@ -122,21 +132,12 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   # --- custom node installs ---
-  if clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"; then
-    install_node_reqs "rgthree" "$RGTHREE_NODE_DIR"
-  else
-    FAILED_NODES="$FAILED_NODES rgthree"
-  fi
-  if clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"; then
-    install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
-  else
-    FAILED_NODES="$FAILED_NODES res4lyf"
-  fi
-  if clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"; then
-    install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
-  else
-    FAILED_NODES="$FAILED_NODES krea2edit"
-  fi
+  clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  install_node_reqs "rgthree" "$RGTHREE_NODE_DIR"
+  clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
+  clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
+  install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
   # --- end custom node installs ---
 
   # ComfyUI 0.30.0 renamed comfy/logging.py -> comfy/internal_logging.py.
@@ -159,7 +160,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   download_hf_file "${HF_MODELS[realism_engine_krea2_v2.safetensors]}" "$MODELS_DIR/loras" &
   download_hf_file "${HF_MODELS[snofs_krea_v1_1.safetensors]}" "$MODELS_DIR/loras" &
   download_hf_file "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}" "$MODELS_DIR/loras" &
-  wait
+  wait || die "one or more model downloads failed"
 
   rm -rf "$TMP_DIR"
 
@@ -180,11 +181,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   echo "-------------------------------------------------------"
-  if [ -n "$FAILED_NODES" ]; then
-    echo "DONE WITH ERRORS - these node(s) failed to clone:$FAILED_NODES"
-  else
-    echo "DOWNLOAD COMPLETE - KREA2 LATEST INSTALLED"
-  fi
+  echo "DOWNLOAD COMPLETE - KREA2 LATEST INSTALLED"
   echo "Total elapsed: $((SECONDS / 60))m$((SECONDS % 60))s"
   echo "-------------------------------------------------------"
 
