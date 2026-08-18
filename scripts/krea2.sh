@@ -97,58 +97,33 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
   # --- end ComfyUI core update ---
 
-  # A pod missing a node is unusable and has to be redeployed, so fail fast and loud
-  # rather than spending 20 more minutes downloading models nobody will use.
-  # CLONE_TIMEOUT caps the stall: a bad host once hung a clone for 12 minutes before
-  # erroring out. Shallow + HTTP/1.1 keep the transfer small and avoid the HTTP/2
-  # "curl 92 stream not closed cleanly" failure that killed it.
-  CLONE_TIMEOUT=240
-  if command -v timeout >/dev/null 2>&1; then
-    TIMEOUT_CMD="timeout $CLONE_TIMEOUT"
-  else
-    TIMEOUT_CMD=""
-  fi
-
-  die() {
-    echo "======================================================="
-    echo "SETUP FAILED: $1"
-    echo "Nothing further will run. Redeploy the pod."
-    echo "Failed after $((SECONDS / 60))m$((SECONDS % 60))s."
-    echo "======================================================="
-    exit 1
-  }
-
-  clone_node() {
-    local name="$1" url="$2" dest="$3"
-    if [ -d "$dest" ]; then
-      echo "$name already present, skipping clone."
-      return 0
-    fi
-    local attempt
-    for attempt in 1 2; do
-      echo "Cloning $name (attempt $attempt/2, ${CLONE_TIMEOUT}s timeout)..."
-      if $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
-        echo "Cloned $name."
-        return 0
-      fi
-      echo "Clone of $name failed or timed out (attempt $attempt/2)."
-      rm -rf "$dest"
-    done
-    die "could not clone $name after 2 attempts"
-  }
-
   # --- custom node installs ---
-  clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  if [ ! -d "$RGTHREE_NODE_DIR" ]; then
+    echo "Cloning rgthree..."
+    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  else
+    echo "rgthree already present, skipping clone."
+  fi
   if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"
     echo "rgthree requirements installed."
   fi
-  clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  if [ ! -d "$RES4LYF_NODE_DIR" ]; then
+    echo "Cloning res4lyf..."
+    git clone "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  else
+    echo "res4lyf already present, skipping clone."
+  fi
   if [ -f "$RES4LYF_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RES4LYF_NODE_DIR/requirements.txt"
     echo "res4lyf requirements installed."
   fi
-  clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
+  if [ ! -d "$KREA2EDIT_NODE_DIR" ]; then
+    echo "Cloning krea2edit..."
+    git clone "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
+  else
+    echo "krea2edit already present, skipping clone."
+  fi
   if [ -f "$KREA2EDIT_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$KREA2EDIT_NODE_DIR/requirements.txt"
     echo "krea2edit requirements installed."
@@ -166,7 +141,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   download_hf_file "${HF_MODELS[realism_engine_krea2_v2.safetensors]}" "$MODELS_DIR/loras" &
   download_hf_file "${HF_MODELS[snofs_krea_v1_1.safetensors]}" "$MODELS_DIR/loras" &
   download_hf_file "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}" "$MODELS_DIR/loras" &
-  wait || die "one or more model downloads failed"
+  wait
 
   rm -rf "$TMP_DIR"
 
@@ -188,7 +163,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
   echo "-------------------------------------------------------"
   echo "DOWNLOAD COMPLETE - KREA2 INSTALLED"
-  echo "Total elapsed: $((SECONDS / 60))m$((SECONDS % 60))s"
   echo "-------------------------------------------------------"
 
 ) 2>&1 | tee -a "$LOG_FILE" >> /proc/1/fd/1 &
