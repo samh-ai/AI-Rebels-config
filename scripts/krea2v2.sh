@@ -97,8 +97,13 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # A pod missing a node is unusable and has to be redeployed, so fail fast and loud
   # rather than spending 20 more minutes downloading models nobody will use.
   # CLONE_TIMEOUT caps the stall: a bad host once hung a clone for 12 minutes before
-  # erroring out. Shallow + HTTP/1.1 keep the transfer small and avoid the HTTP/2
-  # "curl 92 stream not closed cleanly" failure that killed it.
+  # erroring out. HTTP/1.1 avoids the HTTP/2 "curl 92 stream not closed cleanly" failure.
+  #
+  # Deliberately NOT a shallow clone. --depth 1 saved nothing here (RES4LYF is ~250MB
+  # packed and its bulk is blobs at HEAD, not history) while forcing the server to build
+  # a custom pack without reachability bitmaps - a long pre-transfer stall that GitHub
+  # documents as more expensive than a full fetch, and the likely trigger for the
+  # "fetch-pack: unexpected disconnect while reading sideband packet" on attempt 1.
   CLONE_TIMEOUT=240
   if command -v timeout >/dev/null 2>&1; then
     TIMEOUT_CMD="timeout $CLONE_TIMEOUT"
@@ -124,7 +129,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     local attempt
     for attempt in 1 2; do
       echo "Cloning $name (attempt $attempt/2, ${CLONE_TIMEOUT}s timeout)..."
-      if $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --depth 1 --quiet "$url" "$dest"; then
+      if $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest"; then
         echo "Cloned $name."
         return 0
       fi
