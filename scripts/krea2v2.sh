@@ -26,18 +26,16 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # HF_XET_HIGH_PERFORMANCE is gone because it OOM-killed this pod (documented as needing
   # >=64GB RAM; this pod's cgroup limit was 28GB).
   #
-  # HF_HUB_DISABLE_XET=1 disables the xet transport entirely. This is not a tuning choice,
-  # it is a workaround for an open, unresolved hf-xet defect: downloads silently stall
-  # forever mid-transfer with no error, no timeout, and near-zero CPU - matching what we
-  # saw here (two `hf download` processes alive for 30+ minutes, <100MB RSS each, no
-  # progress). Reported and reproduced independently in
-  # https://github.com/huggingface/xet-core/issues/850 ,
-  # https://github.com/huggingface/xet-core/issues/789 , and
-  # https://github.com/huggingface/huggingface_hub/issues/4520 (open). In every case the
-  # documented fix is HF_HUB_DISABLE_XET=1, which falls back to a plain HTTPS download -
-  # slower, but it actually finishes. #789's diagnosis: xet's CDN delivers chunks out of
-  # order at scale, collapsing the TCP congestion window until the transfer never recovers.
-  export HF_HUB_DISABLE_XET=1
+  # HF_HUB_DISABLE_XET was here as a workaround for an hf-xet defect: downloads silently
+  # stalled forever mid-transfer with no error, no timeout, and near-zero CPU - matching
+  # what we saw here (two `hf download` processes alive for 30+ minutes, <100MB RSS each,
+  # no progress). Reported in https://github.com/huggingface/xet-core/issues/850 - root
+  # cause was hf-xet's RetryWrapper delaying a failed chunk's retry by hours instead of
+  # seconds, so a stuck transfer looked permanently dead. Fixed upstream in hf-xet 1.5.2
+  # (released 2026-07-16); confirmed this image already runs 1.6.0 as of 2026-08-19, so
+  # xet is back on. The pip install below force-upgrades hf_xet on every boot regardless,
+  # so a future image rebuild that regresses to a pre-fix version doesn't silently bring
+  # the stall back.
   export HF_HUB_DOWNLOAD_TIMEOUT=60
 
   # Belt-and-suspenders even with xet disabled: HF_HUB_DOWNLOAD_TIMEOUT only bounds the
@@ -131,6 +129,10 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   if ! command -v hf >/dev/null 2>&1; then
     "$COMFY_PY" -m pip install -q -U "huggingface_hub[hf_transfer]"
   fi
+  # Unconditional, unlike the hf install above: "hf already on PATH" doesn't tell us
+  # hf_xet is patched, and a baked image can go stale between rebuilds. >=1.5.2 is the
+  # xet-core#850 fix; see the comment above HF_HUB_DISABLE_XET's old export for detail.
+  "$COMFY_PY" -m pip install -q -U "hf_xet>=1.5.2"
 
   # A pod missing a node is unusable and has to be redeployed, so fail fast and loud
   # rather than spending 20 more minutes downloading models nobody will use.
