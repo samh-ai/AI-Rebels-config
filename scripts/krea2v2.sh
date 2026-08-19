@@ -142,7 +142,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # a custom pack without reachability bitmaps - a long pre-transfer stall that GitHub
   # documents as more expensive than a full fetch, and the likely trigger for the
   # "fetch-pack: unexpected disconnect while reading sideband packet" on attempt 1.
-  CLONE_TIMEOUT=240
+  CLONE_TIMEOUT=1200
   CLONE_KILL_GRACE=30
   if command -v timeout >/dev/null 2>&1; then
     # --kill-after is not optional. Plain `timeout N` only sends SIGTERM at N and then
@@ -168,20 +168,49 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     exit 1
   }
 
+  # Trailing args (if any) are top-level directory names to exclude via a partial
+  # clone + sparse-checkout, instead of a normal full clone. Use this for repos that
+  # bundle large example/doc assets nothing at runtime imports - e.g. RES4LYF is
+  # 216MB, of which 212MB (98%) is example_workflows/ and workflows/ screenshots;
+  # neither __init__.py nor web/js references either dir. --filter=blob:none means
+  # git never transfers blobs for excluded paths at all (this is not the --depth 1
+  # shallow clone already ruled out above - that still forces a full custom pack on
+  # GitHub's side; blob filtering shrinks the pack itself). Measured against the real
+  # repo: 2.9s and 5.6MB instead of the multi-minute stall that was timing out here.
   clone_node() {
-    local name="$1" url="$2" dest="$3"
+    local name="$1" url="$2" dest="$3"; shift 3
+    local sparse_exclude=("$@")
     if [ -d "$dest" ]; then
       echo "$name already present, skipping clone."
       return 0
     fi
-    local attempt rc start
+    local attempt rc start sparse_pattern p
     for attempt in 1 2; do
-      echo "Cloning $name (attempt $attempt/2, $CLONE_LIMIT_DESC)..."
+      if [ "${#sparse_exclude[@]}" -gt 0 ]; then
+        echo "Cloning $name sparse, excluding [${sparse_exclude[*]}] (attempt $attempt/2, $CLONE_LIMIT_DESC)..."
+      else
+        echo "Cloning $name (attempt $attempt/2, $CLONE_LIMIT_DESC)..."
+      fi
       start=$SECONDS
       rc=0
-      $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest" || rc=$?
+      if [ "${#sparse_exclude[@]}" -gt 0 ]; then
+        sparse_pattern="/*"
+        for p in "${sparse_exclude[@]}"; do sparse_pattern="$sparse_pattern
+!/$p/"; done
+        # Whole clone+sparse-checkout+checkout sequence runs under one timeout, same
+        # "never hang forever" guarantee as the plain-clone path below.
+        $TIMEOUT_CMD bash -c '
+          set -e
+          git -c http.version=HTTP/1.1 clone --quiet --filter=blob:none --no-checkout --sparse "$1" "$2"
+          git -C "$2" sparse-checkout init --no-cone
+          printf "%s\n" "$3" > "$2/.git/info/sparse-checkout"
+          git -C "$2" checkout --quiet
+        ' _ "$url" "$dest" "$sparse_pattern" || rc=$?
+      else
+        $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest" || rc=$?
+      fi
       if [ "$rc" -eq 0 ]; then
-        echo "Cloned $name in $((SECONDS - start))s."
+        echo "Cloned $name in $((SECONDS - start))s ($(du -sh "$dest" 2>/dev/null | cut -f1))."
         return 0
       fi
       # Say which failure this was. The old code printed one message for every case, so a
@@ -214,7 +243,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # --- custom node installs ---
   clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
   install_node_reqs "rgthree" "$RGTHREE_NODE_DIR"
-  clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR"
+  clone_node "res4lyf" "${CUSTOM_NODES[res4lyf]}" "$RES4LYF_NODE_DIR" "example_workflows" "workflows"
   install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
   clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
   install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
