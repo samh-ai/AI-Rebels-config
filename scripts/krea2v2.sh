@@ -20,22 +20,19 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
   source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
 
-  # HF_HUB_ENABLE_HF_TRANSFER is gone: all Hub transfers go through hf-xet now and the
-  # variable is a documented no-op.
-  #
-  # HF_XET_HIGH_PERFORMANCE is gone because it OOM-killed this pod (documented as needing
-  # >=64GB RAM; this pod's cgroup limit was 28GB).
-  #
-  # HF_HUB_DISABLE_XET was here as a workaround for an hf-xet defect: downloads silently
-  # stalled forever mid-transfer with no error, no timeout, and near-zero CPU - matching
-  # what we saw here (two `hf download` processes alive for 30+ minutes, <100MB RSS each,
-  # no progress). Reported in https://github.com/huggingface/xet-core/issues/850 - root
-  # cause was hf-xet's RetryWrapper delaying a failed chunk's retry by hours instead of
-  # seconds, so a stuck transfer looked permanently dead. Fixed upstream in hf-xet 1.5.2
-  # (released 2026-07-16); confirmed this image already runs 1.6.0 as of 2026-08-19, so
-  # xet is back on. The pip install below force-upgrades hf_xet on every boot regardless,
-  # so a future image rebuild that regresses to a pre-fix version doesn't silently bring
-  # the stall back.
+  # Match krea2.sh here instead of the more conservative defaults this script tried
+  # first. Without HF_XET_HIGH_PERFORMANCE, xet starts a file at 1 stream and only ramps
+  # up over time (docs: default is concurrency 1, max 64; HIGH_PERFORMANCE raises that to
+  # initial 16, max 124). On 2026-08-19 that default-concurrency path stalled the first
+  # large model download at ~0 progress for all 3 retries (600s each, identical duration
+  # each time - not "slow", stuck), while krea2.sh with HIGH_PERFORMANCE has been
+  # reliable across many boots. HIGH_PERFORMANCE's per-process buffers (up to 16GB
+  # working / 64GB hard-limit) were the reason it got removed after an earlier OOM on
+  # this pod's 28GB cgroup limit - but that was combined with 7 processes at once. Real-
+  # world reliability data favors matching krea2.sh over the theoretical memory risk, so
+  # both the env vars and full parallelism below now match it.
+  export HF_HUB_ENABLE_HF_TRANSFER=1
+  export HF_XET_HIGH_PERFORMANCE=1
   export HF_HUB_DOWNLOAD_TIMEOUT=60
 
   # Belt-and-suspenders even with xet disabled: HF_HUB_DOWNLOAD_TIMEOUT only bounds the
@@ -54,10 +51,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     DL_TIMEOUT_CMD=""
     DOWNLOAD_LIMIT_DESC="NO TIMEOUT - 'timeout' not found on PATH"
   fi
-
-  # Each hf process is an independent client, so peak concurrent bandwidth/memory scales
-  # with how many run at once. 2 concurrent keeps that bounded.
-  MAX_PARALLEL_DOWNLOADS=2
 
   download_hf_file() {
     local url="$1"
@@ -263,30 +256,14 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  # run_queue launches entries up to $2 at a time, waiting for a free slot before starting
-  # the next one. A prior version of this script put the two ~12GB diffusion models first
-  # in a single concurrency-2 queue, which made them the pair that launched together - the
-  # opposite of the intent. Fixed by running the two large files through their own
-  # concurrency-1 queue (never overlapping each other or anything else), then the small
-  # files through concurrency-2.
-  run_queue() {
-    local -n _queue="$1"
-    local max="$2"
-    local entry
-    for entry in "${_queue[@]}"; do
-      while [ "$(jobs -rp | wc -l)" -ge "$max" ]; do
-        wait -n || die "a model download failed"
-      done
-      download_hf_file "${entry%%|*}" "${entry##*|}" &
-    done
-    wait || die "one or more model downloads failed"
-  }
-
-  LARGE_DOWNLOAD_QUEUE=(
+  # Reverted the large/small staggered-queue split: matching krea2.sh's proven behavior
+  # now means all files launch in parallel, same as krea2.sh's plain `download_hf_file
+  # ... &` per file. die() on failure is kept (krea2.sh has no equivalent - a failed
+  # `wait` there is silently ignored) since that's a strict improvement, not a behavior
+  # change in the success path.
+  ALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
-  )
-  SMALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
     "${HF_MODELS[realism_engine_krea2_v2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[snofs_krea_v1_1.safetensors]}|$MODELS_DIR/loras"
@@ -294,10 +271,11 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
   )
 
-  echo "Downloading ${#LARGE_DOWNLOAD_QUEUE[@]} large file(s) one at a time..."
-  run_queue LARGE_DOWNLOAD_QUEUE 1
-  echo "Downloading ${#SMALL_DOWNLOAD_QUEUE[@]} remaining file(s), max $MAX_PARALLEL_DOWNLOADS at a time..."
-  run_queue SMALL_DOWNLOAD_QUEUE "$MAX_PARALLEL_DOWNLOADS"
+  echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files in parallel..."
+  for entry in "${ALL_DOWNLOAD_QUEUE[@]}"; do
+    download_hf_file "${entry%%|*}" "${entry##*|}" &
+  done
+  wait || die "one or more model downloads failed"
 
   rm -rf "$TMP_DIR"
 
