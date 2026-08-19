@@ -122,10 +122,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   if ! command -v hf >/dev/null 2>&1; then
     "$COMFY_PY" -m pip install -q -U "huggingface_hub[hf_transfer]"
   fi
-  # Unconditional, unlike the hf install above: "hf already on PATH" doesn't tell us
-  # hf_xet is patched, and a baked image can go stale between rebuilds. >=1.5.2 is the
-  # xet-core#850 fix; see the comment above HF_HUB_DISABLE_XET's old export for detail.
-  "$COMFY_PY" -m pip install -q -U "hf_xet>=1.5.2"
 
   # A pod missing a node is unusable and has to be redeployed, so fail fast and loud
   # rather than spending 20 more minutes downloading models nobody will use.
