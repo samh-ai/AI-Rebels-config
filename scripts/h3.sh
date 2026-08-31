@@ -11,8 +11,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
   COMFY_ROOT="/workspace/runpod-slim/ComfyUI"
   CUSTOM_NODES_DIR="$COMFY_ROOT/custom_nodes"
-  # one variable per custom node dir, e.g.:
-  # FOO_NODE_DIR="$CUSTOM_NODES_DIR/foo-comfy"
+  RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -41,7 +40,11 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # if the child ignores it, timeout blocks forever too; measured elsewhere in this script).
   # 3 attempts, since huggingface_hub resumes partial local-dir downloads from where they
   # left off rather than restarting, so a retry after a timeout is cheap, not a full redo.
-  DOWNLOAD_TIMEOUT=600
+  # 1800s rather than the 600s this scaffold shipped with. This config's queue includes a
+  # 21.3GB and a 19.5GB file; at a realistic shared ~50MB/s (MAX_PARALLEL running at once)
+  # those need ~7min each, so a 600s cap would have burned all 3 attempts on a download that
+  # was working fine. Resume-on-retry means a longer cap costs nothing on the happy path.
+  DOWNLOAD_TIMEOUT=1800
   DOWNLOAD_KILL_GRACE=30
   if command -v timeout >/dev/null 2>&1; then
     DL_TIMEOUT_CMD="timeout --kill-after=$DOWNLOAD_KILL_GRACE $DOWNLOAD_TIMEOUT"
@@ -74,6 +77,40 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
         124) echo "Download of $filename TIMED OUT after $((SECONDS - start))s (attempt $attempt/3)." ;;
         137) echo "Download of $filename ignored SIGTERM, SIGKILLed after $((SECONDS - start))s (attempt $attempt/3)." ;;
         *)   echo "Download of $filename FAILED, hf exit $rc after $((SECONDS - start))s (attempt $attempt/3)." ;;
+      esac
+    done
+    echo "Download of $filename failed after 3 attempts."
+    return 1
+  }
+
+  # CivitAI is not a HF repo, so `hf download` cannot touch it - hence a separate curl path.
+  # /api/download/models/<id> 307s to a presigned Cloudflare R2 object. Verified 2026-08-31
+  # that it serves anonymously (a ranged GET returned 206), so no API token is needed here.
+  # `-C -` resumes a partial .part across attempts, matching download_hf_file's retry economics.
+  # The destination filename is passed in explicitly because the real name only appears in the
+  # redirect's Content-Disposition, which would otherwise have to be parsed at runtime.
+  download_civitai_file() {
+    local url="$1"
+    local dest_dir="$2"
+    local filename="$3"
+    local dl_tmp attempt rc start
+    dl_tmp="$TMP_DIR/$filename.part"
+    mkdir -p "$dest_dir"
+    touch "$dl_tmp"
+    for attempt in 1 2 3; do
+      echo "Downloading: $filename from CivitAI (attempt $attempt/3, $DOWNLOAD_LIMIT_DESC)"
+      start=$SECONDS
+      rc=0
+      $DL_TIMEOUT_CMD curl -fsSL -C - -o "$dl_tmp" "$url" || rc=$?
+      if [ "$rc" -eq 0 ]; then
+        mv -f "$dl_tmp" "$dest_dir/$filename"
+        echo "Finished: $filename in $((SECONDS - start))s (attempt $attempt/3)."
+        return 0
+      fi
+      case "$rc" in
+        124) echo "Download of $filename TIMED OUT after $((SECONDS - start))s (attempt $attempt/3)." ;;
+        137) echo "Download of $filename ignored SIGTERM, SIGKILLed after $((SECONDS - start))s (attempt $attempt/3)." ;;
+        *)   echo "Download of $filename FAILED, curl exit $rc after $((SECONDS - start))s (attempt $attempt/3)." ;;
       esac
     done
     echo "Download of $filename failed after 3 attempts."
@@ -231,11 +268,8 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   fi
 
   # --- custom node installs ---
-  # (none yet) e.g.:
-  # clone_node "foo" "${CUSTOM_NODES[foo]}" "$FOO_NODE_DIR"
-  # install_node_reqs "foo" "$FOO_NODE_DIR"
-  # sparse variant, excluding top-level dirs nothing imports:
-  # clone_node "foo" "${CUSTOM_NODES[foo]}" "$FOO_NODE_DIR" "example_workflows" "workflows"
+  clone_node "rgthree" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+  install_node_reqs "rgthree" "$RGTHREE_NODE_DIR"
   # --- end custom node installs ---
 
   # ComfyUI 0.30.0 renamed comfy/logging.py -> comfy/internal_logging.py.
@@ -250,22 +284,81 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  # Reverted the large/small staggered-queue split: matching krea2.sh's proven behavior
-  # now means all files launch in parallel, same as krea2.sh's plain `download_hf_file
-  # ... &` per file. die() on failure is kept (krea2.sh has no equivalent - a failed
-  # `wait` there is silently ignored) since that's a strict improvement, not a behavior
-  # change in the success path.
+  # A real concurrency cap instead of launching every file at once. The HIGH_PERFORMANCE
+  # note near the top of this script records an OOM at 7 concurrent downloads against this
+  # pod's 28GB cgroup limit; this queue is 11 files / ~67GB, which would be strictly worse.
+  # 4 keeps the pipe saturated without stacking 11 sets of xet buffers.
+  MAX_PARALLEL=4
+
+  # Failure markers on disk, because each download runs in a background subshell and cannot
+  # set a variable in this one. Deliberately NOT fatal, unlike the other scripts in this repo:
+  # h3 is a throwaway test config whose whole purpose is to pull many candidate models and
+  # discard most of them, so one bad file must not abort the other ten and force a redeploy.
+  # Restore `wait || die "one or more model downloads failed"` once the keepers are settled.
+  FAIL_DIR="/workspace/h3-download-failures"
+  rm -rf "$FAIL_DIR"
+  mkdir -p "$FAIL_DIR"
+
+  run_download() {
+    local kind="$1" url="$2" dest="$3" name="$4"
+    local ok=0
+    case "$kind" in
+      hf)      download_hf_file "$url" "$dest" || ok=1 ;;
+      civitai) download_civitai_file "$url" "$dest" "$name" || ok=1 ;;
+      *)       echo "Unknown download kind '$kind' for $name."; ok=1 ;;
+    esac
+    [ "$ok" -eq 0 ] || : > "$FAIL_DIR/$name"
+  }
+
+  # URLs are hardcoded here on purpose, against the repo's usual "URLs live in registry.sh"
+  # rule: these are unvetted candidates. Once the pod testing is done, the rejects get deleted
+  # from this list and only the survivors are promoted into registry.sh + ${HF_MODELS[...]}.
+  # Entry format: "kind|url|dest_dir|filename". Note the ?download=true query strings from the
+  # HF web UI are stripped - download_hf_file derives the repo path by regex and would
+  # otherwise ask hf for a file literally named "...safetensors?download=true".
   ALL_DOWNLOAD_QUEUE=(
-    # (none yet) one "url|dest" entry per model, e.g.:
-    # "${HF_MODELS[model1.safetensors]}|$MODELS_DIR/diffusion_models"
-    # "${HF_MODELS[model2.safetensors]}|$MODELS_DIR/loras"
+    # --- VAE ---
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors|$MODELS_DIR/vae|minimax_h3_audio_vae_fp32.safetensors"
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors|$MODELS_DIR/vae|minimax_h3_video_vae_fp16.safetensors"
+
+    # --- Text encoders ---
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors|$MODELS_DIR/text_encoders|qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
+
+    # --- Diffusion models ---
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors|$MODELS_DIR/diffusion_models|minimax_h3_fl2va_pruned_int8_convrot.safetensors"
+    "hf|https://huggingface.co/Kijai/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors|$MODELS_DIR/diffusion_models|minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
+
+    # --- LoRAs ---
+    "civitai|https://civitai.red/api/download/models/3266628?fileId=3150341|$MODELS_DIR/loras|MysticXXX_MMH3-V4.safetensors"
+    "hf|https://huggingface.co/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_4step_v1.1_768p_bf16.safetensors|$MODELS_DIR/loras|minimax_h3_fl2v_turbo_4step_v1.1_768p_bf16.safetensors"
+    "hf|https://huggingface.co/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_8step_v1.0_768p_bf16.safetensors|$MODELS_DIR/loras|minimax_h3_fl2v_turbo_8step_v1.0_768p_bf16.safetensors"
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors|$MODELS_DIR/loras|minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
+    "hf|https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors|$MODELS_DIR/loras|minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors"
+    "hf|https://huggingface.co/fal/MiniMax-H3-Realism-People-LoRA/resolve/main/h3-realism-people-t2v-i2v-r2v.safetensors|$MODELS_DIR/loras|h3-realism-people-t2v-i2v-r2v.safetensors"
   )
 
-  echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files in parallel..."
-  for entry in ${ALL_DOWNLOAD_QUEUE[@]+"${ALL_DOWNLOAD_QUEUE[@]}"}; do
-    download_hf_file "${entry%%|*}" "${entry##*|}" &
+  echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files, max $MAX_PARALLEL at a time (~67GB total)..."
+  for entry in "${ALL_DOWNLOAD_QUEUE[@]}"; do
+    while [ "$(jobs -rp | wc -l)" -ge "$MAX_PARALLEL" ]; do sleep 5; done
+    IFS='|' read -r q_kind q_url q_dest q_name <<< "$entry"
+    run_download "$q_kind" "$q_url" "$q_dest" "$q_name" &
   done
-  wait || die "one or more model downloads failed"
+  wait
+
+  FAILED_FILES=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && FAILED_FILES+=("$f")
+  done < <(ls -1 "$FAIL_DIR" 2>/dev/null || true)
+  if [ "${#FAILED_FILES[@]}" -gt 0 ]; then
+    echo "======================================================="
+    echo "WARNING: ${#FAILED_FILES[@]} of ${#ALL_DOWNLOAD_QUEUE[@]} downloads FAILED:"
+    printf '  - %s\n' "${FAILED_FILES[@]}"
+    echo "Continuing anyway - the rest are installed and ComfyUI will still start."
+    echo "======================================================="
+  else
+    echo "All ${#ALL_DOWNLOAD_QUEUE[@]} downloads succeeded."
+  fi
+  rm -rf "$FAIL_DIR"
 
   rm -rf "$TMP_DIR"
 
