@@ -24,6 +24,7 @@ HF_MODELS[flux-2-klein-9b-fp8.safetensors]="https://huggingface.co/black-forest-
 HF_MODELS[seedvr2_ema_7b_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/seedvr2_ema_7b_fp16.safetensors"
 HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors"
 HF_MODELS[krea2_turbo_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_fp8_scaled.safetensors"
+HF_MODELS[minimax_h3_fl2va_pruned_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors"
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
@@ -47,12 +48,15 @@ HF_MODELS[zimage-igbaddie_pruned.safetensors]="https://huggingface.co/skhaai/air
 HF_MODELS[realism_engine_krea2_v2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v2.safetensors"
 HF_MODELS[snofs_krea_v1_1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/snofs_krea_v1_1.safetensors"
 HF_MODELS[krea2_identity_edit_v1_2.safetensors]="https://huggingface.co/conradlocke/krea2-identity-edit/resolve/main/krea2_identity_edit_v1_2.safetensors"
+HF_MODELS[minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
+HF_MODELS[MysticXXX_MMH3-V4.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/MysticXXX_MMH3-V4.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 HF_MODELS[qwen_3_4b.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
 HF_MODELS[qwen_3_8b_fp8mixed.safetensors]="https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
 HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
+HF_MODELS[qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
 
 # VAE
 HF_MODELS[wan_2.1_vae.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
@@ -60,6 +64,8 @@ HF_MODELS[ema_vae_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI
 HF_MODELS[ae.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
 HF_MODELS[flux2-vae.safetensors]="https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/vae/flux2-vae.safetensors"
 HF_MODELS[qwen_image_vae.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/vae/qwen_image_vae.safetensors"
+HF_MODELS[minimax_h3_video_vae_fp16.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors"
+HF_MODELS[minimax_h3_audio_vae_fp32.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors"
 
 # Clip Vision
 HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
@@ -68,3 +74,4 @@ HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_C
 # key: filename (matches the HF_MODELS key), value: the original download URL it was copied from.
 declare -A ORIGINAL
 ORIGINAL[snofs_krea_v1_1.safetensors]="https://civitai.red/api/download/models/3104629?fileId=2984442"
+ORIGINAL[MysticXXX_MMH3-V4.safetensors]="https://civitai.red/api/download/models/3266628?fileId=3150341"
