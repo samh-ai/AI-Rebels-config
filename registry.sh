@@ -25,6 +25,7 @@ HF_MODELS[seedvr2_ema_7b_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_
 HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors"
 HF_MODELS[krea2_turbo_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_fp8_scaled.safetensors"
 HF_MODELS[minimax_h3_fl2va_pruned_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors"
+HF_MODELS[museByStableYogi_v35Int8Extended.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/museByStableYogi_v35Int8Extended.safetensors"
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
@@ -50,6 +51,11 @@ HF_MODELS[snofs_krea_v1_1.safetensors]="https://huggingface.co/skhaai/airebels/r
 HF_MODELS[krea2_identity_edit_v1_2.safetensors]="https://huggingface.co/conradlocke/krea2-identity-edit/resolve/main/krea2_identity_edit_v1_2.safetensors"
 HF_MODELS[minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
 HF_MODELS[MysticXXX_MMH3-V4.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/MysticXXX_MMH3-V4.safetensors"
+HF_MODELS[K_excessivecum.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/K_excessivecum.safetensors"
+HF_MODELS[snofs_krea_v1_4.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/snofs_krea_v1_4.safetensors"
+HF_MODELS[realism_engine_krea2_v3.1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v3.1.safetensors"
+HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/krea2-bloomgirls-realism-step00004000.safetensors"
+HF_MODELS[RealisticSnapshotKrea2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/RealisticSnapshotKrea2.safetensors"
 
 # Text Encoders
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
@@ -66,6 +72,7 @@ HF_MODELS[flux2-vae.safetensors]="https://huggingface.co/Comfy-Org/flux2-dev/res
 HF_MODELS[qwen_image_vae.safetensors]="https://huggingface.co/Comfy-Org/Krea-2/resolve/main/vae/qwen_image_vae.safetensors"
 HF_MODELS[minimax_h3_video_vae_fp16.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors"
 HF_MODELS[minimax_h3_audio_vae_fp32.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors"
+HF_MODELS[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"
 
 # Clip Vision
 HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
@@ -75,3 +82,10 @@ HF_MODELS[clip_vision_h.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_C
 declare -A ORIGINAL
 ORIGINAL[snofs_krea_v1_1.safetensors]="hhttps://civitai.red/models/1972981/snofs-sex-nudes-other-fun-stuff?modelVersionId=3104629"
 ORIGINAL[MysticXXX_MMH3-V4.safetensors]="https://civitai.red/models/2856467/mmh3-mystic-xxx?modelVersionId=3266628"
+ORIGINAL[museByStableYogi_v35Int8Extended.safetensors]="https://civitai.red/models/2741166/muse-by-stable-yogi-krea2?modelVersionId=3258954"
+ORIGINAL[K_excessivecum.safetensors]="https://civitai.red/models/2512358?modelVersionId=3221218"
+ORIGINAL[snofs_krea_v1_4.safetensors]="https://civitai.red/models/1972981/snofs-sex-nudes-other-fun-stuff?modelVersionId=3290120"
+ORIGINAL[realism_engine_krea2_v3.1.safetensors]="https://civitai.red/models/2688234/realism-engine-ideogram-4-krea-2?modelVersionId=3109006"
+ORIGINAL[krea2-bloomgirls-realism-step00004000.safetensors]="https://civitai.red/models/2735553/krea-2-bloomgirls-ultrarealism?modelVersionId=3191538"
+ORIGINAL[RealisticSnapshotKrea2.safetensors]="https://civitai.red/models/2268008/realistic-snapshot-z-image-turbo-krea-2?modelVersionId=3084537"
+ORIGINAL[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]="https://huggingface.co/spacepxl/Wan2.1-VAE-upscale2x/resolve/main/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"

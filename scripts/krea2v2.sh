@@ -260,11 +260,18 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   ALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
+    "${HF_MODELS[museByStableYogi_v35Int8Extended.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
     "${HF_MODELS[realism_engine_krea2_v2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[snofs_krea_v1_1.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[krea2_identity_edit_v1_2.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[K_excessivecum.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[snofs_krea_v1_4.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[realism_engine_krea2_v3.1.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[RealisticSnapshotKrea2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
+    "${HF_MODELS[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]}|$MODELS_DIR/vae"
   )
 
   echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files in parallel..."
