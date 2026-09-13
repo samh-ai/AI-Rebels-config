@@ -20,20 +20,16 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
   source <(curl -fsSL "https://raw.githubusercontent.com/samh-ai/AI-Rebels-config/main/registry.sh")
 
-  # Match krea2.sh here instead of the more conservative defaults this script tried
-  # first. Without HF_XET_HIGH_PERFORMANCE, xet starts a file at 1 stream and only ramps
-  # up over time (docs: default is concurrency 1, max 64; HIGH_PERFORMANCE raises that to
-  # initial 16, max 124). On 2026-08-19 that default-concurrency path stalled the first
-  # large model download at ~0 progress for all 3 retries (600s each, identical duration
-  # each time - not "slow", stuck), while krea2.sh with HIGH_PERFORMANCE has been
-  # reliable across many boots. HIGH_PERFORMANCE's per-process buffers (up to 16GB
-  # working / 64GB hard-limit) were the reason it got removed after an earlier OOM on
-  # this pod's 28GB cgroup limit - but that was combined with 7 processes at once. Real-
-  # world reliability data favors matching krea2.sh over the theoretical memory risk, so
-  # both the env vars and full parallelism below now match it.
+  # Keep Xet's aggressive internal transfer concurrency, but bound its buffers and run
+  # only two model-file downloads at a time. High-performance Xet otherwise permits up
+  # to 64GB of buffering per hf process, which can OOM pods with a 28GB RAM limit.
   export HF_HUB_ENABLE_HF_TRANSFER=1
   export HF_XET_HIGH_PERFORMANCE=1
+  export HF_XET_RECONSTRUCTION_DOWNLOAD_BUFFER_SIZE=4gb
+  export HF_XET_RECONSTRUCTION_DOWNLOAD_BUFFER_PERFILE_SIZE=2gb
+  export HF_XET_RECONSTRUCTION_DOWNLOAD_BUFFER_LIMIT=4gb
   export HF_HUB_DOWNLOAD_TIMEOUT=60
+  MAX_PARALLEL_DOWNLOADS=2
 
   # Belt-and-suspenders even with xet disabled: HF_HUB_DOWNLOAD_TIMEOUT only bounds the
   # HTTP read timeout, not the whole `hf download` process, so a stuck download could still
@@ -252,11 +248,8 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   rm -rf "$TMP_DIR"
   mkdir -p "$TMP_DIR"
 
-  # Reverted the large/small staggered-queue split: matching krea2.sh's proven behavior
-  # now means all files launch in parallel, same as krea2.sh's plain `download_hf_file
-  # ... &` per file. die() on failure is kept (krea2.sh has no equivalent - a failed
-  # `wait` there is silently ignored) since that's a strict improvement, not a behavior
-  # change in the success path.
+  # Limit simultaneous hf processes, not Xet's internal transfer streams. Each process
+  # retains high-performance Xet behavior while its memory use is capped above.
   ALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
@@ -274,11 +267,27 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]}|$MODELS_DIR/vae"
   )
 
-  echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files in parallel..."
+  wait_for_download_batch() {
+    local pid failed=0
+    for pid in "${DOWNLOAD_PIDS[@]}"; do
+      wait "$pid" || failed=1
+    done
+    DOWNLOAD_PIDS=()
+    return "$failed"
+  }
+
+  echo "Downloading ${#ALL_DOWNLOAD_QUEUE[@]} files (max $MAX_PARALLEL_DOWNLOADS at once)..."
+  DOWNLOAD_PIDS=()
   for entry in "${ALL_DOWNLOAD_QUEUE[@]}"; do
     download_hf_file "${entry%%|*}" "${entry##*|}" &
+    DOWNLOAD_PIDS+=("$!")
+    if [ "${#DOWNLOAD_PIDS[@]}" -ge "$MAX_PARALLEL_DOWNLOADS" ]; then
+      wait_for_download_batch || die "one or more model downloads failed"
+    fi
   done
-  wait || die "one or more model downloads failed"
+  if [ "${#DOWNLOAD_PIDS[@]}" -gt 0 ]; then
+    wait_for_download_batch || die "one or more model downloads failed"
+  fi
 
   rm -rf "$TMP_DIR"
 
