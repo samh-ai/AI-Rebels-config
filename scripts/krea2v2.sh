@@ -264,7 +264,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[RealisticSnapshotKrea2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
-    "${HF_MODELS[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]}|$MODELS_DIR/vae"
   )
 
   wait_for_download_batch() {
