@@ -235,7 +235,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
   clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
   install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
-  clone_node "lanpaint" "${CUSTOM_NODES[lanpaint]}" "$LANPAINT_NODE_DIR"
+  clone_node "lanpaint" "${CUSTOM_NODES[lanpaint]}" "$LANPAINT_NODE_DIR" "examples" "example_workflows" "tests"
   install_node_reqs "lanpaint" "$LANPAINT_NODE_DIR"
   # --- end custom node installs ---
 
