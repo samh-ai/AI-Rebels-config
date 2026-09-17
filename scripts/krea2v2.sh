@@ -14,6 +14,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   RGTHREE_NODE_DIR="$CUSTOM_NODES_DIR/rgthree-comfy"
   RES4LYF_NODE_DIR="$CUSTOM_NODES_DIR/RES4LYF"
   KREA2EDIT_NODE_DIR="$CUSTOM_NODES_DIR/comfyui-krea2edit"
+  LANPAINT_NODE_DIR="$CUSTOM_NODES_DIR/LanPaint"
   MODELS_DIR="$COMFY_ROOT/models"
   TMP_DIR="/workspace/hf-downloads"
   HEALTH_URL="http://127.0.0.1:8188"
@@ -234,6 +235,8 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   install_node_reqs "res4lyf" "$RES4LYF_NODE_DIR"
   clone_node "krea2edit" "${CUSTOM_NODES[krea2edit]}" "$KREA2EDIT_NODE_DIR"
   install_node_reqs "krea2edit" "$KREA2EDIT_NODE_DIR"
+  clone_node "lanpaint" "${CUSTOM_NODES[lanpaint]}" "$LANPAINT_NODE_DIR"
+  install_node_reqs "lanpaint" "$LANPAINT_NODE_DIR"
   # --- end custom node installs ---
 
   # ComfyUI 0.30.0 renamed comfy/logging.py -> comfy/internal_logging.py.
