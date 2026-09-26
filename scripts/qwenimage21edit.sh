@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-LOG_FILE="/workspace/qwenimage2.1edit-background.log"
+LOG_FILE="/workspace/qwenimage21edit-background.log"
 # If the log file can't be created (e.g. /workspace not mounted yet), fall back
 # to /dev/null so tee never kills the watcher.
 touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
@@ -300,6 +300,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
 
 ) 2>&1 | tee -a "$LOG_FILE" >> /proc/1/fd/1 &
 
-echo "qwenimage2.1edit.sh: background watcher started, main boot can continue"
-echo "qwenimage2.1edit.sh: tail -f $LOG_FILE"
+echo "qwenimage21edit.sh: background watcher started, main boot can continue"
+echo "qwenimage21edit.sh: tail -f $LOG_FILE"
 exit 0
