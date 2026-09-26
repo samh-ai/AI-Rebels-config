@@ -17,6 +17,7 @@ CUSTOM_NODES[krea2edit]="https://github.com/lbouaraba/comfyui-krea2edit"
 declare -A HF_MODELS
 
 # Diffusion Models
+HF_MODELS[Qwen-Image-2.1-INT8.safetensors]="https://huggingface.co/unsloth/Qwen-Image-2.1-FP8/resolve/main/Qwen-Image-2.1-INT8.safetensors"
 HF_MODELS[wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
 HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
 HF_MODELS[z_image_turbo_bf16.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
@@ -61,6 +62,7 @@ HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]="https://huggingfac
 HF_MODELS[RealisticSnapshotKrea2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/RealisticSnapshotKrea2.safetensors"
 
 # Text Encoders
+HF_MODELS[Qwen-Image-2.1-text_encoder-FP8.safetensors]="https://huggingface.co/unsloth/Qwen-Image-2.1-FP8/resolve/main/Qwen-Image-2.1-text_encoder-FP8.safetensors"
 HF_MODELS[umt5_xxl_fp8_e4m3fn_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 HF_MODELS[qwen_3_4b.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors"
 HF_MODELS[qwen_3_8b_fp8mixed.safetensors]="https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
@@ -68,6 +70,7 @@ HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/K
 HF_MODELS[qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
 
 # VAE
+HF_MODELS[qwen_image_2.1_vae_bf16.safetensors]="https://huggingface.co/unsloth/Qwen-Image-2.1-FP8/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
 HF_MODELS[wan_2.1_vae.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
 HF_MODELS[ema_vae_fp16.safetensors]="https://huggingface.co/numz/SeedVR2_comfyUI/resolve/main/ema_vae_fp16.safetensors"
 HF_MODELS[ae.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
