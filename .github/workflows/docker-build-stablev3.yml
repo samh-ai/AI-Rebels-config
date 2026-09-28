@@ -1,0 +1,56 @@
+name: Build and Push Docker Image (stablev3)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'docker/Dockerfile.stablev3'
+      - 'docker/install-comfyui.sh'
+      - 'docker/test-stablev3.sh'
+      - 'docker/boot.sh'
+      - '.github/workflows/docker-build-stablev3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-stablev3
+  cancel-in-progress: false
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Make room for the GPU image on the disposable runner
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image for testing
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile.stablev3
+          pull: true
+          load: true
+          tags: airebels/comfyui:stablev3
+
+      - name: Verify fresh and existing workspace startup and Qwen core nodes
+        timeout-minutes: 15
+        run: bash docker/test-stablev3.sh airebels/comfyui:stablev3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Publish the tested image
+        run: docker push airebels/comfyui:stablev3

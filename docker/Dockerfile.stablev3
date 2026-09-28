@@ -1,0 +1,15 @@
+FROM runpod/comfyui:cuda12.8
+
+USER root
+
+ARG COMFYUI_VERSION=v0.37.4
+ENV COMFYUI_VERSION=${COMFYUI_VERSION}
+
+COPY registry.sh /tmp/airebels-registry.sh
+COPY docker/install-comfyui.sh /tmp/install-comfyui.sh
+RUN bash /tmp/install-comfyui.sh && rm /tmp/install-comfyui.sh /tmp/airebels-registry.sh
+
+COPY docker/boot.sh /opt/boot.sh
+RUN chmod +x /opt/boot.sh
+
+ENTRYPOINT ["/opt/boot.sh"]

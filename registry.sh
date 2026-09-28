@@ -2,6 +2,9 @@
 # Registry of custom nodes and model download links.
 # Sourced by setup scripts — do not execute directly.
 
+# ComfyUI core source used when building an updated image.
+COMFYUI_REPO="https://github.com/Comfy-Org/ComfyUI.git"
+
 # Custom nodes — key: short name, value: git clone URL
 declare -A CUSTOM_NODES
 CUSTOM_NODES[seedvr2]="https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler"
