@@ -254,7 +254,6 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # Limit simultaneous hf processes, not Xet's internal transfer streams. Each process
   # retains high-performance Xet behavior while its memory use is capped above.
   ALL_DOWNLOAD_QUEUE=(
-    "${HF_MODELS[darkBeastINT8Convrot2_darkBeastKREA2FP8.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[museByStableYogi_v35Int8Extended.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
