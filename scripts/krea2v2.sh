@@ -266,6 +266,8 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[realism_engine_krea2_v3.1.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[RealisticSnapshotKrea2.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[famegrid_spicy_3167060.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[anal_helper_krea2_loraholic.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[qwen_image_vae.safetensors]}|$MODELS_DIR/vae"
   )
 

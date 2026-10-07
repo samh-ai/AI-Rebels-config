@@ -63,6 +63,8 @@ HF_MODELS[snofs_krea_v1_4.safetensors]="https://huggingface.co/skhaai/airebels/r
 HF_MODELS[realism_engine_krea2_v3.1.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/realism_engine_krea2_v3.1.safetensors"
 HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/krea2-bloomgirls-realism-step00004000.safetensors"
 HF_MODELS[RealisticSnapshotKrea2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/RealisticSnapshotKrea2.safetensors"
+HF_MODELS[famegrid_spicy_3167060.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/famegrid_spicy_3167060.safetensors"
+HF_MODELS[anal_helper_krea2_loraholic.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/anal_helper_krea2_loraholic.safetensors"
 
 # Text Encoders
 HF_MODELS[qwen3vl_8b_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
@@ -100,3 +102,5 @@ ORIGINAL[realism_engine_krea2_v3.1.safetensors]="https://civitai.red/models/2688
 ORIGINAL[krea2-bloomgirls-realism-step00004000.safetensors]="https://civitai.red/models/2735553/krea-2-bloomgirls-ultrarealism?modelVersionId=3191538"
 ORIGINAL[RealisticSnapshotKrea2.safetensors]="https://civitai.red/models/2268008/realistic-snapshot-z-image-turbo-krea-2?modelVersionId=3084537"
 ORIGINAL[Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors]="https://huggingface.co/spacepxl/Wan2.1-VAE-upscale2x/resolve/main/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"
+ORIGINAL[famegrid_spicy_3167060.safetensors]="https://civitai.red/api/download/models/3278885?fileId=3167060"
+ORIGINAL[anal_helper_krea2_loraholic.safetensors]="https://civitai.red/api/download/models/3105253?fileId=2985077"
