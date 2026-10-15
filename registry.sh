@@ -17,6 +17,11 @@ CUSTOM_NODES[res4lyf]="https://github.com/ClownsharkBatwing/RES4LYF"
 CUSTOM_NODES[krea2edit]="https://github.com/lbouaraba/comfyui-krea2edit"
 CUSTOM_NODES[minimaxh3mod]="https://github.com/Luisacaotica/ComfyUI-MiniMaxH3Mod"
 
+# Branch to clone when a repo's default branch is not the maintained one.
+# rgthree-comfy's default branch (dev) is frozen at 2023 and breaks on current ComfyUI.
+declare -A CUSTOM_NODE_BRANCH
+CUSTOM_NODE_BRANCH[rgthree]="main"
+
 # HF models — key: filename, value: full download URL
 declare -A HF_MODELS
 

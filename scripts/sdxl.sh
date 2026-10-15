@@ -68,9 +68,14 @@ LOG_FILE="/workspace/sdxl-background.log"
   # --- custom node installs ---
   if [ ! -d "$RGTHREE_NODE_DIR" ]; then
     echo "Cloning rgthree..."
-    git clone "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
+    git clone --branch "${CUSTOM_NODE_BRANCH[rgthree]}" "${CUSTOM_NODES[rgthree]}" "$RGTHREE_NODE_DIR"
   else
-    echo "rgthree already present, skipping clone."
+    # Move an existing copy off rgthree-comfy's stale default branch (dev, frozen at 2023,
+    # breaks on current ComfyUI) onto the branch pinned in the registry.
+    echo "rgthree already present, switching to ${CUSTOM_NODE_BRANCH[rgthree]}."
+    git -C "$RGTHREE_NODE_DIR" fetch --quiet origin "${CUSTOM_NODE_BRANCH[rgthree]}" \
+      && git -C "$RGTHREE_NODE_DIR" checkout --quiet -B "${CUSTOM_NODE_BRANCH[rgthree]}" "origin/${CUSTOM_NODE_BRANCH[rgthree]}" \
+      || echo "WARNING: could not update rgthree, keeping the existing copy."
   fi
   if [ -f "$RGTHREE_NODE_DIR/requirements.txt" ]; then
     pip install -q -r "$RGTHREE_NODE_DIR/requirements.txt"

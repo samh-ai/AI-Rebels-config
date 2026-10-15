@@ -166,14 +166,24 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   clone_node() {
     local name="$1" url="$2" dest="$3"; shift 3
     local sparse_exclude=("$@")
+    local branch="${CUSTOM_NODE_BRANCH[$name]:-}"
     if [ -d "$dest" ]; then
-      # A node baked into the image or left on the volume can be years stale (an old
-      # rgthree-comfy hooks execution.recursive_output_delete_if_changed, which current
-      # ComfyUI removed, so it fails to import). Fast-forward it; a failed update is
-      # not fatal, the existing copy is still used.
+      # A node left on the volume can be stale: rgthree-comfy's default branch (dev) is
+      # frozen at 2023 and hooks execution.recursive_output_delete_if_changed, which
+      # current ComfyUI removed, so it fails to import. Move it to the branch pinned in
+      # CUSTOM_NODE_BRANCH (or just fast-forward). A failed update is not fatal, the
+      # existing copy is still used.
       echo "$name already present, updating instead of cloning."
-      $TIMEOUT_CMD git -C "$dest" -c http.version=HTTP/1.1 pull --quiet --ff-only \
-        || echo "WARNING: could not update $name, keeping the existing copy."
+      if [ -n "$branch" ]; then
+        $TIMEOUT_CMD bash -c '
+          set -e
+          git -C "$1" -c http.version=HTTP/1.1 fetch --quiet origin "$2"
+          git -C "$1" checkout --quiet -B "$2" "origin/$2"
+        ' _ "$dest" "$branch" || echo "WARNING: could not update $name to $branch, keeping the existing copy."
+      else
+        $TIMEOUT_CMD git -C "$dest" -c http.version=HTTP/1.1 pull --quiet --ff-only \
+          || echo "WARNING: could not update $name, keeping the existing copy."
+      fi
       return 0
     fi
     local attempt rc start sparse_pattern p
@@ -193,13 +203,13 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
         # "never hang forever" guarantee as the plain-clone path below.
         $TIMEOUT_CMD bash -c '
           set -e
-          git -c http.version=HTTP/1.1 clone --quiet --filter=blob:none --no-checkout --sparse "$1" "$2"
+          git -c http.version=HTTP/1.1 clone --quiet --filter=blob:none --no-checkout --sparse ${4:+--branch "$4"} "$1" "$2"
           git -C "$2" sparse-checkout init --no-cone
           printf "%s\n" "$3" > "$2/.git/info/sparse-checkout"
           git -C "$2" checkout --quiet
-        ' _ "$url" "$dest" "$sparse_pattern" || rc=$?
+        ' _ "$url" "$dest" "$sparse_pattern" "$branch" || rc=$?
       else
-        $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet "$url" "$dest" || rc=$?
+        $TIMEOUT_CMD git -c http.version=HTTP/1.1 clone --quiet ${branch:+--branch "$branch"} "$url" "$dest" || rc=$?
       fi
       if [ "$rc" -eq 0 ]; then
         echo "Cloned $name in $((SECONDS - start))s ($(du -sh "$dest" 2>/dev/null | cut -f1))."
