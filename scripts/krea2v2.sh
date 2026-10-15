@@ -169,7 +169,13 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     local name="$1" url="$2" dest="$3"; shift 3
     local sparse_exclude=("$@")
     if [ -d "$dest" ]; then
-      echo "$name already present, skipping clone."
+      # A node baked into the image or left on the volume can be years stale (an old
+      # rgthree-comfy hooks execution.recursive_output_delete_if_changed, which current
+      # ComfyUI removed, so it fails to import). Fast-forward it; a failed update is
+      # not fatal, the existing copy is still used.
+      echo "$name already present, updating instead of cloning."
+      $TIMEOUT_CMD git -C "$dest" -c http.version=HTTP/1.1 pull --quiet --ff-only \
+        || echo "WARNING: could not update $name, keeping the existing copy."
       return 0
     fi
     local attempt rc start sparse_pattern p
