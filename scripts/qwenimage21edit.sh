@@ -265,6 +265,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   # retains high-performance Xet behavior while its memory use is capped above.
   ALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[qwen_image_2.1_int8_convrot.safetensors]}|$MODELS_DIR/diffusion_models"
+    "${HF_MODELS[qwen_image_2.1_turbo_int8_convrot.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[qwen3vl_8b_int8_convrot.safetensors]}|$MODELS_DIR/text_encoders"
     "${HF_MODELS[qwen_image_2.1_vae_bf16.safetensors]}|$MODELS_DIR/vae"
   )

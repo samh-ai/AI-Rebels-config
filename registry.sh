@@ -27,6 +27,7 @@ declare -A HF_MODELS
 
 # Diffusion Models
 HF_MODELS[qwen_image_2.1_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+HF_MODELS[qwen_image_2.1_turbo_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_turbo_int8_convrot.safetensors"
 HF_MODELS[wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
 HF_MODELS[wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
 HF_MODELS[z_image_turbo_bf16.safetensors]="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
