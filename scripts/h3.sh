@@ -273,6 +273,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
     "${HF_MODELS[MysticXXX_MMH3-V4.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[hmmasturbation_v2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[H3_VBVR_Pro_attn_only.safetensors]}|$MODELS_DIR/loras"
+    "${HF_MODELS[h3_character_swap_pro4500_1000.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[minimax_h3_video_vae_fp16.safetensors]}|$MODELS_DIR/vae"
     "${HF_MODELS[minimax_h3_audio_vae_fp32.safetensors]}|$MODELS_DIR/vae"
   )

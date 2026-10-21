@@ -72,6 +72,7 @@ HF_MODELS[krea2-bloomgirls-realism-step00004000.safetensors]="https://huggingfac
 HF_MODELS[RealisticSnapshotKrea2.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/RealisticSnapshotKrea2.safetensors"
 HF_MODELS[famegrid_spicy_3167060.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/famegrid_spicy_3167060.safetensors"
 HF_MODELS[anal_helper_krea2_loraholic.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/anal_helper_krea2_loraholic.safetensors"
+HF_MODELS[h3_character_swap_pro4500_1000.safetensors]="https://huggingface.co/akatz-ai/MiniMax-H3-Character-Swap-LoRA/resolve/main/h3_character_swap_pro4500_1000.safetensors"
 
 # Text Encoders
 HF_MODELS[qwen3vl_8b_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
