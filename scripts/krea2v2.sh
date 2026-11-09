@@ -272,6 +272,7 @@ touch "$LOG_FILE" 2>/dev/null || LOG_FILE="/dev/null"
   ALL_DOWNLOAD_QUEUE=(
     "${HF_MODELS[krea2_turbo_fp8_scaled.safetensors]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[museByStableYogi_v35Int8Extended.safetensors]}|$MODELS_DIR/diffusion_models"
+    "${HF_MODELS["Muse By Stable Yogi Krea2 V4.0 Extended CIV INT8-ConvRot C86.safetensors"]}|$MODELS_DIR/diffusion_models"
     "${HF_MODELS[qwen3vl_4b_fp8_scaled.safetensors]}|$MODELS_DIR/text_encoders"
     "${HF_MODELS[realism_engine_krea2_v2.safetensors]}|$MODELS_DIR/loras"
     "${HF_MODELS[snofs_krea_v1_1.safetensors]}|$MODELS_DIR/loras"

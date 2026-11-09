@@ -38,6 +38,7 @@ HF_MODELS[krea2_turbo_fp8_scaled.safetensors]="https://huggingface.co/Comfy-Org/
 HF_MODELS[minimax_h3_fl2va_pruned_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_fl2va_pruned_int8_convrot.safetensors"
 HF_MODELS[minimax_h3_ref2va_pruned_int8_convrot.safetensors]="https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors"
 HF_MODELS[museByStableYogi_v35Int8Extended.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/museByStableYogi_v35Int8Extended.safetensors"
+HF_MODELS["Muse By Stable Yogi Krea2 V4.0 Extended CIV INT8-ConvRot C86.safetensors"]="https://huggingface.co/skhaai/airebels/resolve/main/models/Muse By Stable Yogi Krea2 V4.0 Extended CIV INT8-ConvRot C86.safetensors"
 
 # Checkpoints
 HF_MODELS[big_lust_v1.6.safetensors]="https://huggingface.co/skhaai/airebels/resolve/main/models/big_lust_v1.6.safetensors"
@@ -116,3 +117,4 @@ ORIGINAL[famegrid_spicy_3167060.safetensors]="https://civitai.red/api/download/m
 ORIGINAL[anal_helper_krea2_loraholic.safetensors]="https://civitai.red/api/download/models/3105253?fileId=2985077"
 ORIGINAL[MysticXXX_MMH3-V5.safetensors]="https://civitai.red/api/download/models/3416478?fileId=3309543"
 ORIGINAL[MysticXXX_MMH3-V5-ref2va.safetensors]="https://civitai.red/api/download/models/3416478?fileId=3311427"
+ORIGINAL["Muse By Stable Yogi Krea2 V4.0 Extended CIV INT8-ConvRot C86.safetensors"]="https://civitai.red/api/download/models/3425119?fileId=3319930"
